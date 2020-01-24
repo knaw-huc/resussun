@@ -18,7 +18,7 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
 
   @Override
   public String getName() {
-    return "Timbuctoo OpenRefine Recon API";
+    return "Resussun";
   }
 
   @Override
