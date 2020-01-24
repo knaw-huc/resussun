@@ -32,6 +32,7 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- REST framework -->
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-core</artifactId>
@@ -41,6 +42,14 @@
       <artifactId>dropwizard-json-logging</artifactId>
       <version>${dropwizard.version}</version>
     </dependency>
+
+    <!-- HTTP client used for creating a search index -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.11</version>
+    </dependency>
+
   </dependencies>
 
   <build>
