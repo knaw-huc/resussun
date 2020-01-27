@@ -3,7 +3,20 @@ package nl.knaw.huc.resussun.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.http.HttpHost;
+import org.elasticsearch.action.search.MultiSearchRequest;
+import org.elasticsearch.action.search.MultiSearchResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,15 +28,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.Iterator;
 
 @Path("/")
 public class RootResource {
 
   public static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
   private final ObjectMapper objectMapper;
+  private final RestHighLevelClient elasticsearchClient;
 
   public RootResource() {
     objectMapper = new ObjectMapper();
+    elasticsearchClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200, "http")));
   }
 
   @GET
@@ -55,18 +72,46 @@ public class RootResource {
       final JsonNode queries;
       queries = objectMapper.readTree(request.getFirst("queries"));
 
-
       final ObjectNode returnRoot = objectMapper.createObjectNode();
-      queries.fieldNames().forEachRemaining(field -> {
-        returnRoot.set(field, objectMapper.createObjectNode().set("result", objectMapper.createArrayNode()));
-      });
+      for (Iterator<String> fieldNames = queries.fieldNames(); fieldNames.hasNext(); ) {
+        String field = fieldNames.next();
+        final String queryText = queries.get(field).get("query").asText();
+        final SearchSourceBuilder query =
+            new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*").queryName(field));
+        final SearchResponse response =
+            elasticsearchClient.search(new SearchRequest("index").source(query), RequestOptions.DEFAULT);
+
+        final ArrayNode results = objectMapper.createArrayNode();
+        for (final SearchHit hit : response.getHits()) {
+          final ObjectNode result = objectMapper.createObjectNode();
+          result.put("id", hit.getId());
+          result.put("score", hit.getScore() * 100);
+
+          final JsonNode source = objectMapper.readTree(hit.getSourceAsString());
+          result.put("name", source.get("title").get("value").asText());
+
+          final ArrayNode types = objectMapper.createArrayNode();
+          final String type = source.get("rdf_type").get("title").get("value").asText();
+          types.add(objectMapper.createObjectNode().put("id", type).put("name", type));
+          result.set("type", types);
+
+          results.add(result);
+        }
+
+
+        returnRoot.set(field, objectMapper.createObjectNode().set("result", results));
+      }
 
       return Response.ok(returnRoot).build();
     } catch (JsonProcessingException e) {
       LOG.info("request not supported: {}", e.getMessage());
       return Response.status(Response.Status.BAD_REQUEST).build();
+    } catch (IOException e) {
+      LOG.error("Could not execute query", e);
+      return Response.serverError().build();
     }
 
   }
+
 
 }
