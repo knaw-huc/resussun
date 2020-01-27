@@ -17,6 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dropwizard.version>2.0.0</dropwizard.version>
+    <elasticsearch.version>7.5.1</elasticsearch.version>
   </properties>
 
   <dependencyManagement>
@@ -32,6 +33,7 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- REST framework -->
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-core</artifactId>
@@ -41,6 +43,31 @@
       <artifactId>dropwizard-json-logging</artifactId>
       <version>${dropwizard.version}</version>
     </dependency>
+
+    <!-- elastic search client -->
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${elasticsearch.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>elasticsearch-rest-client</artifactId>
+      <version>${elasticsearch.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>elasticsearch-rest-high-level-client</artifactId>
+      <version>${elasticsearch.version}</version>
+    </dependency>
+
+    <!-- HTTP client used for creating a search index -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.11</version>
+    </dependency>
+
   </dependencies>
 
   <build>

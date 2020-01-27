@@ -3,6 +3,7 @@ package nl.knaw.huc.resussun;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import nl.knaw.huc.resussun.cli.CreateIndexCommand;
 import nl.knaw.huc.resussun.resources.RootResource;
 import org.glassfish.jersey.logging.LoggingFeature;
 
@@ -23,7 +24,7 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
 
   @Override
   public void initialize(final Bootstrap<ResussunConfiguration> bootstrap) {
-
+    bootstrap.addCommand(new CreateIndexCommand());
   }
 
   @Override
