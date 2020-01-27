@@ -87,6 +87,11 @@
                 <program>
                   <id>resussun</id>
                   <mainClass>nl.knaw.huc.resussun.ResussunApplication</mainClass>
+                  <jvmSettings>
+                    <extraArguments>
+                      <extraArgument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</extraArgument>
+                    </extraArguments>
+                  </jvmSettings>
                 </program>
               </programs>
             </configuration>
