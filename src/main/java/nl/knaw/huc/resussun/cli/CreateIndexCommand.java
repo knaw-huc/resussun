@@ -151,11 +151,10 @@ public class CreateIndexCommand extends Command {
     final BulkRequest bulkRequest = new BulkRequest();
     data.iterator().forEachRemaining(entity -> {
       try {
-      bulkRequest.add(new IndexRequest("index")
-          .id(entity.get("uri").asText())
-          .source(objectMapper.writeValueAsString(entity), XContentType.JSON)
-          // .source(XContentType.JSON, "title", entity.get("title").get("value").asText())
-      );
+        bulkRequest.add(new IndexRequest("index")
+            .id(entity.get("uri").asText())
+            .source(objectMapper.writeValueAsString(entity), XContentType.JSON)
+        );
       } catch (JsonProcessingException e) {
         System.err.println("could add field to request: " + e.getMessage());
       }
