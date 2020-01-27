@@ -5,6 +5,9 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import nl.knaw.huc.resussun.resources.RootResource;
 import nl.knaw.huc.resussun.tasks.CreateIndexTask;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.glassfish.jersey.logging.LoggingFeature;
 
 import java.util.logging.Level;
@@ -29,10 +32,14 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
   @Override
   public void run(final ResussunConfiguration configuration,
                   final Environment environment) {
-    environment.jersey().register(new RootResource());
+    final RestHighLevelClient elasticsearchClient = new RestHighLevelClient(
+        RestClient.builder(new HttpHost("localhost", 9200, "http"))
+    );
+    environment.jersey().register(new RootResource(elasticsearchClient));
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,
         LoggingFeature.Verbosity.PAYLOAD_ANY, LoggingFeature.DEFAULT_MAX_ENTITY_SIZE));
-    environment.admin().addTask(new CreateIndexTask());
+    environment.admin().addTask(new CreateIndexTask(
+        elasticsearchClient));
   }
 
 }

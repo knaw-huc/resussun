@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import io.dropwizard.servlets.tasks.Task;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -18,7 +17,6 @@ import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
@@ -70,11 +68,11 @@ public class CreateIndexTask extends Task {
   private final ObjectMapper objectMapper;
   private final RestHighLevelClient elasticsearchClient;
 
-  public CreateIndexTask(){
+  public CreateIndexTask(RestHighLevelClient elasticsearchClient){
     super("createIndex");
     httpClient = HttpClients.createDefault();
     objectMapper = new ObjectMapper();
-    elasticsearchClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200, "http")));
+    this.elasticsearchClient = elasticsearchClient;
   }
 
   @Override
