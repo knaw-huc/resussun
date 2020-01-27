@@ -1,14 +1,12 @@
-package nl.knaw.huc.resussun.cli;
+package nl.knaw.huc.resussun.tasks;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.dropwizard.cli.Command;
-import io.dropwizard.setup.Bootstrap;
-import net.sourceforge.argparse4j.inf.Namespace;
-import net.sourceforge.argparse4j.inf.Subparser;
+import com.google.common.collect.Lists;
+import io.dropwizard.servlets.tasks.Task;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -23,15 +21,18 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class CreateIndexCommand extends Command {
-
+public class CreateIndexTask extends Task {
   private static final String COLLECTION_LIST_QUERY = "query dataSetMetaData($dataSet:ID! ) {\n" +
       "  dataSetMetadata(dataSetId: $dataSet) {\n" +
       "    collectionList {\n" +
@@ -61,50 +62,45 @@ public class CreateIndexCommand extends Command {
       "    }\n" +
       "  }\n" +
       "}";
+  private static final String DATA_SET_ID = "dataSetId";
+  private static final String TIMBUCTOO_URL = "timbuctooUrl";
+  private static final List<String> PARAMS = Lists.newArrayList(DATA_SET_ID, TIMBUCTOO_URL);
+  private static final Logger LOG = LoggerFactory.getLogger(CreateIndexTask.class);
   private final CloseableHttpClient httpClient;
   private final ObjectMapper objectMapper;
   private final RestHighLevelClient elasticsearchClient;
 
-  public CreateIndexCommand() {
-    super("createIndex", "Creates an Elasticsearch index based on a Timbuctoo data set");
+  public CreateIndexTask(){
+    super("createIndex");
     httpClient = HttpClients.createDefault();
     objectMapper = new ObjectMapper();
     elasticsearchClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200, "http")));
   }
 
   @Override
-  public void configure(Subparser subparser) {
-    subparser.addArgument("--tim")
-             .dest("timbuctooUrl")
-             .type(String.class)
-             .required(true)
-             .help("Url of the Timbuctoo instance to get the data from");
+  public void execute(Map<String, List<String>> params, PrintWriter out) throws Exception {
+    if (!params.keySet().containsAll(PARAMS)) {
+      out.println("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
+      return;
+    }
+    out.println(params);
 
-    subparser.addArgument("--dataSet")
-             .dest("dataSetId")
-             .type(String.class)
-             .required(true)
-             .help("The data set to index");
-  }
-
-  @Override
-  public void run(Bootstrap<?> bootstrap, Namespace namespace) throws Exception {
-    System.out.println(namespace.getAttrs());
-
-    final String dataSetId = namespace.getString("dataSetId");
-    final String graphQlUrl = namespace.getString("timbuctooUrl") + "/v5/graphql";
-    final Stream<String> collectionListIds = getCollectionListIds(dataSetId, graphQlUrl);
+    final String dataSetId = params.get(DATA_SET_ID).get(0);
+    final String graphQlUrl = params.get(TIMBUCTOO_URL).get(0) + "/v5/graphql";
+    final Stream<String> collectionListIds = getCollectionListIds(dataSetId, graphQlUrl, out);
 
     final List<String> collectionIdSet = collectionListIds.collect(Collectors.toList());
-    System.out.println("Number of collections: " + collectionIdSet.size());
+    out.println("Number of collections: " + collectionIdSet.size());
     for (String collectionId : collectionIdSet) {
-      queryData(dataSetId, graphQlUrl, collectionId, null);
+      queryData(dataSetId, graphQlUrl, collectionId, out, null);
     }
     elasticsearchClient.close();
   }
 
-  private void queryData(String dataSetId, String graphQlUrl, String collectionId, String cursor) throws IOException {
-    System.out.println("queryData cursor: " + cursor + " collectionId: " + collectionId);
+  private void queryData(String dataSetId, String graphQlUrl, String collectionId, PrintWriter out, String cursor)
+      throws IOException {
+    out.println("queryData cursor: " + cursor + " collectionId: " + collectionId);
+    out.flush();
     final ObjectNode dataQuery = objectMapper.createObjectNode();
     dataQuery.put("query", String.format(DATA_QUERY, dataSetId, collectionId));
     final JsonNode cursorVariable = objectMapper.createObjectNode().put("cursor", cursor);
@@ -119,12 +115,16 @@ public class CreateIndexCommand extends Command {
       final HttpEntity entity = response.getEntity();
 
       if (response.getStatusLine().getStatusCode() != 200) {
-        System.out.println("response status: " + response.getStatusLine().getStatusCode());
-        System.out.println("response: " + EntityUtils.toString(entity));
+        out.println("response status: " + response.getStatusLine().getStatusCode());
+        out.println("response: " + EntityUtils.toString(entity));
+        out.flush();
       } else {
         final JsonNode jsonNode = objectMapper.readTree(response.getEntity().getContent());
 
-        processData((ArrayNode) jsonNode.get("data").get("dataSets").get(dataSetId).get(collectionId).get("items"));
+        processData(
+            (ArrayNode) jsonNode.get("data").get("dataSets").get(dataSetId).get(collectionId).get("items"),
+            out
+        );
 
         final boolean hasNextCursor = !jsonNode.get("data")
                                                .get("dataSets")
@@ -132,7 +132,8 @@ public class CreateIndexCommand extends Command {
                                                .get(collectionId)
                                                .get("nextCursor").isNull();
 
-        System.out.println("hasNextCursor: " + hasNextCursor);
+        out.println("hasNextCursor: " + hasNextCursor);
+        out.flush();
 
         if (hasNextCursor) {
           final String nextCursor = jsonNode.get("data")
@@ -141,13 +142,13 @@ public class CreateIndexCommand extends Command {
                                             .get(collectionId)
                                             .get("nextCursor").asText();
 
-          queryData(dataSetId, graphQlUrl, collectionId, nextCursor);
+          queryData(dataSetId, graphQlUrl, collectionId, out, nextCursor);
         }
       }
     }
   }
 
-  private void processData(ArrayNode data) {
+  private void processData(ArrayNode data, PrintWriter out) {
     final BulkRequest bulkRequest = new BulkRequest();
     data.iterator().forEachRemaining(entity -> {
       try {
@@ -156,19 +157,22 @@ public class CreateIndexCommand extends Command {
             .source(objectMapper.writeValueAsString(entity), XContentType.JSON)
         );
       } catch (JsonProcessingException e) {
-        System.err.println("could add field to request: " + e.getMessage());
+        LOG.error("Could not add field to request", e);
+        out.println("Could not add field to request: " + e.getMessage());
+        out.flush();
       }
     });
 
     try {
       elasticsearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
     } catch (IOException e) {
-      System.err.println("Could not process bulkRequest: " + e.getMessage());
+      out.println("Could not process bulkRequest: " + e.getMessage());
+      LOG.error("Could not process bulkRequest", e);
     }
 
   }
 
-  private Stream<String> getCollectionListIds(String dataSetId, String graphQlUri) throws IOException {
+  private Stream<String> getCollectionListIds(String dataSetId, String graphQlUri, PrintWriter out) throws IOException {
     final ObjectNode metadataQuery = objectMapper.createObjectNode();
     metadataQuery.put("query", COLLECTION_LIST_QUERY);
 
@@ -184,8 +188,10 @@ public class CreateIndexCommand extends Command {
       final HttpEntity entity = response.getEntity();
 
       if (response.getStatusLine().getStatusCode() != 200) {
-        System.out.println("response status: " + response.getStatusLine().getStatusCode());
-        System.out.println("response: " + EntityUtils.toString(entity));
+        out.println("response status: " + response.getStatusLine().getStatusCode());
+        out.println("response: " + EntityUtils.toString(entity));
+        out.flush();
+        LOG.warn("Could not process Timbuctoo query: {}", EntityUtils.toString(entity));
         return Stream.empty();
       }
 
