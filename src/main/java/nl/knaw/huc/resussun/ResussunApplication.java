@@ -5,6 +5,7 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import nl.knaw.huc.resussun.healthchecks.ElasticsearchHealthCheck;
 import nl.knaw.huc.resussun.resources.RootResource;
 import nl.knaw.huc.resussun.tasks.CreateIndexTask;
 import org.apache.http.HttpHost;
@@ -44,8 +45,9 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
     environment.jersey().register(new RootResource(elasticsearchClient));
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,
       LoggingFeature.Verbosity.PAYLOAD_ANY, LoggingFeature.DEFAULT_MAX_ENTITY_SIZE));
-    environment.admin().addTask(new CreateIndexTask(
-      elasticsearchClient));
+    environment.healthChecks().register("elasticsearch", new ElasticsearchHealthCheck(elasticsearchClient));
+
+    environment.admin().addTask(new CreateIndexTask(elasticsearchClient));
   }
 
 }
