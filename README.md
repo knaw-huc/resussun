@@ -8,13 +8,19 @@
 1. Start application with `./target/appassembler/bin/resussun server config.yml`
 1. To check that your application is running enter url `http://localhost:8080`
 
-### Use docker
+### Use docker-compose.yml
 1. run the docker-compose file: `docker-compose -f docker/docker-compose.yml up -d`  
 1. To check that your application is running enter url `http://localhost:8080`
 
+### Use docker-compose-local.yml
+This docker-compose uses the local build to run with Elasticsearch.
+1. Run `mvn clean install` to build your application
+
+
 ### Create an index
 1. Create an index: `curl -X POST --data "timbuctooUrl={timbuctooUrl}&dataSetId={dataSetId}" http://{resussun_host}:{admin_port}/tasks/createIndex`
-
+1. run the docker-compose file: `docker-compose -f docker/docker-compose-local.yml up -d`  
+1. To check that your application is running enter url `http://localhost:8080`
 
 ##Health Check
 ---
