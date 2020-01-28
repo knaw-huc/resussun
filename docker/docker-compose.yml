@@ -11,6 +11,8 @@ services:
       - nginxproxynetwork
   resussun:
     image: knawhuc/resussun:latest
+    environment:
+      ELASTICSEARCH_HOST: "elasticsearch"
     ports:
       - "8080:8080"
       - "8081:8081"
