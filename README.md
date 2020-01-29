@@ -22,7 +22,7 @@ This docker-compose uses the local build to run with Elasticsearch.
 1. run the docker-compose file: `docker-compose -f docker/docker-compose-local.yml up -d`  
 1. To check that your application is running enter url `http://localhost:8080`
 
-##Health Check
+## Health Check
 ---
 
 To see your applications health enter url `http://localhost:8081/healthcheck`
