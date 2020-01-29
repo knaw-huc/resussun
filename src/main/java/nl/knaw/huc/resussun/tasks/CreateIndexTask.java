@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import io.dropwizard.servlets.tasks.Task;
+import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -66,13 +68,13 @@ public class CreateIndexTask extends Task {
   private static final Logger LOG = LoggerFactory.getLogger(CreateIndexTask.class);
   private final CloseableHttpClient httpClient;
   private final ObjectMapper objectMapper;
-  private final RestHighLevelClient elasticsearchClient;
+  private final ElasticSearchClientFactory elasticSearchClientFactory;
 
-  public CreateIndexTask(RestHighLevelClient elasticsearchClient){
+  public CreateIndexTask(ElasticSearchClientFactory elasticSearchClientFactory){
     super("createIndex");
     httpClient = HttpClients.createDefault();
     objectMapper = new ObjectMapper();
-    this.elasticsearchClient = elasticsearchClient;
+    this.elasticSearchClientFactory = elasticSearchClientFactory;
   }
 
   @Override
@@ -83,20 +85,28 @@ public class CreateIndexTask extends Task {
     }
     out.println(params);
 
-    final String dataSetId = params.get(DATA_SET_ID).get(0);
-    final String graphQlUrl = params.get(TIMBUCTOO_URL).get(0) + "/v5/graphql";
-    final Stream<String> collectionListIds = getCollectionListIds(dataSetId, graphQlUrl, out);
+    try (final RestHighLevelClient elasticsearchClient = elasticSearchClientFactory.build()) {
+      final String dataSetId = params.get(DATA_SET_ID).get(0);
+      final String graphQlUrl = params.get(TIMBUCTOO_URL).get(0) + "/v5/graphql";
+      final Stream<String> collectionListIds = getCollectionListIds(dataSetId, graphQlUrl, out);
 
-    final List<String> collectionIdSet = collectionListIds.collect(Collectors.toList());
-    out.println("Number of collections: " + collectionIdSet.size());
-    for (String collectionId : collectionIdSet) {
-      queryData(dataSetId, graphQlUrl, collectionId, out, null);
+      final List<String> collectionIdSet = collectionListIds.collect(Collectors.toList());
+      out.println("Number of collections: " + collectionIdSet.size());
+      for (String collectionId : collectionIdSet) {
+        queryData(dataSetId, graphQlUrl, collectionId, out, data -> processData(data, out, elasticsearchClient), null);
+      }
     }
-    elasticsearchClient.close();
+
   }
 
-  private void queryData(String dataSetId, String graphQlUrl, String collectionId, PrintWriter out, String cursor)
-      throws IOException {
+  private void queryData(
+      String dataSetId,
+      String graphQlUrl,
+      String collectionId,
+      PrintWriter out,
+      Consumer<ArrayNode> processData,
+      String cursor
+  ) throws IOException {
     out.println("queryData cursor: " + cursor + " collectionId: " + collectionId);
     out.flush();
     final ObjectNode dataQuery = objectMapper.createObjectNode();
@@ -119,9 +129,8 @@ public class CreateIndexTask extends Task {
       } else {
         final JsonNode jsonNode = objectMapper.readTree(response.getEntity().getContent());
 
-        processData(
-            (ArrayNode) jsonNode.get("data").get("dataSets").get(dataSetId).get(collectionId).get("items"),
-            out
+        processData.accept(
+            (ArrayNode) jsonNode.get("data").get("dataSets").get(dataSetId).get(collectionId).get("items")
         );
 
         final boolean hasNextCursor = !jsonNode.get("data")
@@ -140,13 +149,13 @@ public class CreateIndexTask extends Task {
                                             .get(collectionId)
                                             .get("nextCursor").asText();
 
-          queryData(dataSetId, graphQlUrl, collectionId, out, nextCursor);
+          queryData(dataSetId, graphQlUrl, collectionId, out, processData, nextCursor);
         }
       }
     }
   }
 
-  private void processData(ArrayNode data, PrintWriter out) {
+  private void processData(ArrayNode data, PrintWriter out, RestHighLevelClient elasticsearchClient) {
     final BulkRequest bulkRequest = new BulkRequest();
     data.iterator().forEachRemaining(entity -> {
       try {

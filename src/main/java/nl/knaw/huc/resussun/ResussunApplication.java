@@ -5,6 +5,7 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
 import nl.knaw.huc.resussun.healthchecks.ElasticsearchHealthCheck;
 import nl.knaw.huc.resussun.resources.RootResource;
 import nl.knaw.huc.resussun.tasks.CreateIndexTask;
@@ -41,13 +42,13 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
   @Override
   public void run(final ResussunConfiguration config,
                   final Environment environment) {
-    final RestHighLevelClient elasticsearchClient = config.getElasticSearchClientFactory().build();
-    environment.jersey().register(new RootResource(elasticsearchClient));
+    final ElasticSearchClientFactory elasticsearchClientFactory = config.getElasticSearchClientFactory();
+    environment.jersey().register(new RootResource(elasticsearchClientFactory));
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,
       LoggingFeature.Verbosity.PAYLOAD_ANY, LoggingFeature.DEFAULT_MAX_ENTITY_SIZE));
-    environment.healthChecks().register("elasticsearch", new ElasticsearchHealthCheck(elasticsearchClient));
+    environment.healthChecks().register("elasticsearch", new ElasticsearchHealthCheck(elasticsearchClientFactory));
 
-    environment.admin().addTask(new CreateIndexTask(elasticsearchClient));
+    environment.admin().addTask(new CreateIndexTask(elasticsearchClientFactory));
   }
 
 }

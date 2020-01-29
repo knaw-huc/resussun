@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -31,11 +32,11 @@ public class RootResource {
 
   public static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
   private final ObjectMapper objectMapper;
-  private final RestHighLevelClient elasticsearchClient;
+  private final ElasticSearchClientFactory elasticSearchClientFactory;
 
-  public RootResource(RestHighLevelClient elasticsearchClient) {
+  public RootResource(ElasticSearchClientFactory elasticSearchClientFactory) {
     objectMapper = new ObjectMapper();
-    this.elasticsearchClient = elasticsearchClient;
+    this.elasticSearchClientFactory = elasticSearchClientFactory;
   }
 
   @GET
@@ -68,33 +69,34 @@ public class RootResource {
       queries = objectMapper.readTree(request.getFirst("queries"));
 
       final ObjectNode returnRoot = objectMapper.createObjectNode();
-      for (Iterator<String> fieldNames = queries.fieldNames(); fieldNames.hasNext(); ) {
-        String field = fieldNames.next();
-        final String queryText = queries.get(field).get("query").asText();
-        final SearchSourceBuilder query =
-            new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*").queryName(field));
-        final SearchResponse response =
-            elasticsearchClient.search(new SearchRequest("index").source(query), RequestOptions.DEFAULT);
+      try (final RestHighLevelClient elasticsearchClient = elasticSearchClientFactory.build()) {
+        for (Iterator<String> fieldNames = queries.fieldNames(); fieldNames.hasNext(); ) {
+          String field = fieldNames.next();
+          final String queryText = queries.get(field).get("query").asText();
+          final SearchSourceBuilder query =
+              new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*").queryName(field));
+          final SearchResponse response =
+              elasticsearchClient.search(new SearchRequest("index").source(query), RequestOptions.DEFAULT);
 
-        final ArrayNode results = objectMapper.createArrayNode();
-        for (final SearchHit hit : response.getHits()) {
-          final ObjectNode result = objectMapper.createObjectNode();
-          result.put("id", hit.getId());
-          result.put("score", hit.getScore() * 100);
+          final ArrayNode results = objectMapper.createArrayNode();
+          for (final SearchHit hit : response.getHits()) {
+            final ObjectNode result = objectMapper.createObjectNode();
+            result.put("id", hit.getId());
+            result.put("score", hit.getScore() * 100);
 
-          final JsonNode source = objectMapper.readTree(hit.getSourceAsString());
-          result.put("name", source.get("title").get("value").asText());
+            final JsonNode source = objectMapper.readTree(hit.getSourceAsString());
+            result.put("name", source.get("title").get("value").asText());
 
-          final ArrayNode types = objectMapper.createArrayNode();
-          final String type = source.get("rdf_type").get("title").get("value").asText();
-          types.add(objectMapper.createObjectNode().put("id", type).put("name", type));
-          result.set("type", types);
+            final ArrayNode types = objectMapper.createArrayNode();
+            final String type = source.get("rdf_type").get("title").get("value").asText();
+            types.add(objectMapper.createObjectNode().put("id", type).put("name", type));
+            result.set("type", types);
 
-          results.add(result);
+            results.add(result);
+          }
+
+          returnRoot.set(field, objectMapper.createObjectNode().set("result", results));
         }
-
-
-        returnRoot.set(field, objectMapper.createObjectNode().set("result", results));
       }
 
       return Response.ok(returnRoot).build();

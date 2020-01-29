@@ -7,7 +7,10 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 
 public class ElasticSearchClientFactory {
-  private final RestHighLevelClient restHighLevelClient;
+
+  private final String hostName;
+  private final int port;
+  private final String scheme;
 
   @JsonCreator
   public ElasticSearchClientFactory(
@@ -15,11 +18,13 @@ public class ElasticSearchClientFactory {
     @JsonProperty("port") int port,
     @JsonProperty("scheme") String scheme
   ) {
-    restHighLevelClient = new RestHighLevelClient(RestClient.builder(new HttpHost(hostName, port, scheme)));
+    this.hostName = hostName;
+    this.port = port;
+    this.scheme = scheme;
   }
 
   public RestHighLevelClient build() {
-    return restHighLevelClient;
+    return new RestHighLevelClient(RestClient.builder(new HttpHost(hostName, port, scheme)));
   }
 
 }
