@@ -3,3 +3,8 @@ logging:
   loggers:
     nl.knaw.huc: DEBUG
     nl.knaw.huc.resources: TRACE
+
+elasticsearchClient:
+  hostName: ${ELASTICSEARCH_HOST:- localhost}
+  port: ${ELASTICSEARCH_PORT:- 9200}
+  scheme: ${ELASTICSEARCH_SCHEME:- http}
