@@ -16,7 +16,7 @@ services:
       ELASTICSEARCH_HOST: "elasticsearch"
     ports:
       - "8080:80"
-      - "8081:80"
+      - "8081:81"
     networks:
       - nginxproxynetwork
     volumes:
