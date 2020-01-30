@@ -19,5 +19,7 @@ FROM openjdk:11-jre-slim
 COPY --from=builder  /build/resussun/target/appassembler /app
 COPY --from=builder /build/resussun/config.yml /app/config.yml
 WORKDIR /app
-EXPOSE 8080
+ENV SERVER_PORT=80 ADMIN_PORT=81
+EXPOSE 80
+EXPOSE 81
 CMD ["./bin/resussun", "server", "./config.yml"]
