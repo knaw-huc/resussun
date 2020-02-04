@@ -59,22 +59,23 @@ public class RootResource {
   }
 
   private Response handleRequest(String queriesJson) {
-    try {
-      if (queriesJson != null) {
-        Map<String, Query> queries = objectMapper.readValue(queriesJson, new TypeReference<>() {});
+    if (queriesJson != null) {
+      try {
+        Map<String, Query> queries = objectMapper.readValue(queriesJson, new TypeReference<>() {
+        });
         Map<String, Candidates> searchResults = search(queries);
         return Response.ok(searchResults).build();
-      }
 
-      ServiceManifest serviceManifest = createServiceManifest();
-      return Response.ok(serviceManifest).build();
-    } catch (JsonProcessingException e) {
-      LOG.info("request not supported: {}", e.getMessage());
-      return Response.status(Response.Status.BAD_REQUEST).build();
-    } catch (IOException e) {
-      LOG.error("Could not execute query", e);
-      return Response.serverError().build();
+      } catch (JsonProcessingException e) {
+        LOG.info("request not supported: {}", e.getMessage());
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      } catch (IOException e) {
+        LOG.error("Could not execute query", e);
+        return Response.serverError().build();
+      }
     }
+
+    return Response.ok(createServiceManifest()).build();
   }
 
   private ServiceManifest createServiceManifest() {
