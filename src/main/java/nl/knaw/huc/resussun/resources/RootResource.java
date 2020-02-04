@@ -1,11 +1,14 @@
 package nl.knaw.huc.resussun.resources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
+import nl.knaw.huc.resussun.model.Candidate;
+import nl.knaw.huc.resussun.model.Candidates;
+import nl.knaw.huc.resussun.model.Query;
+import nl.knaw.huc.resussun.model.ServiceManifest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -13,21 +16,24 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.glassfish.jersey.server.JSONP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
 
 @Path("/")
+@Produces({"application/json", "application/javascript"})
 public class RootResource {
 
   public static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
@@ -40,75 +46,75 @@ public class RootResource {
   }
 
   @GET
-  @Produces("application/json")
-  public Response get(ObjectNode request, @QueryParam("callback") String callback) {
-    return handleRequest(request, callback);
-  }
-
-  private Response handleRequest(ObjectNode request, String callback) {
-    final ObjectNode rootNode = objectMapper.createObjectNode();
-
-    rootNode.put("name", "Timbuctoo OpenRefine Recon API");
-    rootNode.put("identifierSpace", "http://example.org/idetifierspace");
-    rootNode.put("schemaSpace", "http://example.org/schemaspace");
-
-    if (callback != null) {
-      return Response.ok(String.format("%s(%s);", callback, rootNode)).build();
-    }
-    return Response.ok(rootNode).build();
+  @JSONP(queryParam = "callback")
+  public Response get(@QueryParam("queries") String queries) {
+    return handleRequest(queries);
   }
 
   @POST
+  @JSONP(queryParam = "callback")
   @Consumes("application/x-www-form-urlencoded")
-  @Produces("application/json")
-  public Response query(MultivaluedMap<String, String> request) {
-    LOG.info("request: {}", request);
-
-    try {
-      final JsonNode queries;
-      queries = objectMapper.readTree(request.getFirst("queries"));
-
-      final ObjectNode returnRoot = objectMapper.createObjectNode();
-      try (final RestHighLevelClient elasticsearchClient = elasticSearchClientFactory.build()) {
-        for (Iterator<String> fieldNames = queries.fieldNames(); fieldNames.hasNext(); ) {
-          String field = fieldNames.next();
-          final String queryText = queries.get(field).get("query").asText();
-          final SearchSourceBuilder query =
-              new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*").queryName(field));
-          final SearchResponse response =
-              elasticsearchClient.search(new SearchRequest("index").source(query), RequestOptions.DEFAULT);
-
-          final ArrayNode results = objectMapper.createArrayNode();
-          for (final SearchHit hit : response.getHits()) {
-            final ObjectNode result = objectMapper.createObjectNode();
-            result.put("id", hit.getId());
-            result.put("score", hit.getScore() * 100);
-
-            final JsonNode source = objectMapper.readTree(hit.getSourceAsString());
-            result.put("name", source.get("title").get("value").asText());
-
-            final ArrayNode types = objectMapper.createArrayNode();
-            final String type = source.get("rdf_type").get("title").get("value").asText();
-            types.add(objectMapper.createObjectNode().put("id", type).put("name", type));
-            result.set("type", types);
-
-            results.add(result);
-          }
-
-          returnRoot.set(field, objectMapper.createObjectNode().set("result", results));
-        }
-      }
-
-      return Response.ok(returnRoot).build();
-    } catch (JsonProcessingException e) {
-      LOG.info("request not supported: {}", e.getMessage());
-      return Response.status(Response.Status.BAD_REQUEST).build();
-    } catch (IOException e) {
-      LOG.error("Could not execute query", e);
-      return Response.serverError().build();
-    }
-
+  public Response post(@FormParam("queries") String queries) {
+    return handleRequest(queries);
   }
 
+  private Response handleRequest(String queriesJson) {
+    if (queriesJson != null) {
+      try {
+        Map<String, Query> queries = objectMapper.readValue(queriesJson, new TypeReference<>() {
+        });
+        Map<String, Candidates> searchResults = search(queries);
+        return Response.ok(searchResults).build();
 
+      } catch (JsonProcessingException e) {
+        LOG.info("request not supported: {}", e.getMessage());
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      } catch (IOException e) {
+        LOG.error("Could not execute query", e);
+        return Response.serverError().build();
+      }
+    }
+
+    return Response.ok(createServiceManifest()).build();
+  }
+
+  private ServiceManifest createServiceManifest() {
+    return new ServiceManifest("Timbuctoo OpenRefine Recon API",
+            "http://example.org/idetifierspace", "http://example.org/schemaspace");
+  }
+
+  private Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
+    final Map<String, Candidates> candidates = new HashMap<>();
+
+    try (final RestHighLevelClient elasticsearchClient = elasticSearchClientFactory.build()) {
+      for (Map.Entry<String, Query> querySet : queries.entrySet()) {
+        final String field = querySet.getKey();
+        final String queryText = querySet.getValue().getQuery();
+
+        final SearchSourceBuilder query =
+                new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*").queryName(field));
+        final SearchResponse response =
+                elasticsearchClient.search(new SearchRequest("index").source(query), RequestOptions.DEFAULT);
+
+        final Candidates results = new Candidates();
+        candidates.put(field, results);
+
+        for (final SearchHit hit : response.getHits()) {
+          final JsonNode source = objectMapper.readTree(hit.getSourceAsString());
+          final String type = source.get("rdf_type").get("title").get("value").asText();
+
+          final Candidate candidate = new Candidate(
+                  hit.getId(),
+                  source.get("title").get("value").asText(),
+                  hit.getScore() * 100,
+                  false
+          ).type(type, type);
+
+          results.candidate(candidate);
+        }
+      }
+    }
+
+    return candidates;
+  }
 }
