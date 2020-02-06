@@ -2,6 +2,8 @@ package nl.knaw.huc.resussun.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,30 +20,45 @@ public class QueryResponseMapper implements TimbuctooResponseMapper<QueryRespons
         String cursor = !root.get("nextCursor").isNull() ? root.get("nextCursor").asText() : null;
 
         Iterable<JsonNode> itemsIterable = () -> root.get("items").iterator();
-        List<Map<String, List<String>>> items = StreamSupport.stream(itemsIterable.spliterator(), false)
+        List<QueryResponseItem> items = StreamSupport.stream(itemsIterable.spliterator(), false)
                 .map(QueryResponseMapper::mapItem)
                 .collect(Collectors.toList());
 
         return new QueryResponse(cursor, items);
     }
 
-    private static Map<String, List<String>> mapItem(JsonNode item) {
+    private static QueryResponseItem mapItem(JsonNode itemJson) {
+        String uri = itemJson.get("uri").textValue();
+        String title = getValues(itemJson.get("title")).get(0);
+        List<String> types = itemJson.has("rdf_type")
+                ? getValues(itemJson.get("rdf_type")) : getValues(itemJson.get("rdf_typeList"));
+
         Map<String, List<String>> values = new HashMap<>();
-        item.fields().forEachRemaining(field -> {
-            if (field.getValue().isTextual())
-                values.put(field.getKey(), List.of(field.getValue().textValue()));
-            else if (field.getValue().has("value"))
-                values.put(field.getKey(), List.of(field.getValue().get("value").textValue()));
-            else if (field.getValue().has("uri"))
-                values.put(field.getKey(), List.of(field.getValue().get("uri").textValue()));
-            else if (field.getValue().has("items")) {
-                Iterable<JsonNode> itemsIterable = () -> field.getValue().get("items").iterator();
-                values.put(field.getKey(), StreamSupport.stream(itemsIterable.spliterator(), false)
-                        .map(value -> value.has("value")
-                                ? value.get("value").textValue() : value.get("uri").textValue())
-                        .collect(Collectors.toList()));
-            }
+        itemJson.fields().forEachRemaining(field -> {
+            String key = field.getKey();
+            if (!List.of("uri", "title", "rdf_type", "rdf_typeList").contains(key))
+                values.put(key, getValues(field.getValue()));
         });
-        return values;
+
+        return new QueryResponseItem(uri, title, types, values);
+    }
+
+    private static List<String> getValues(JsonNode jsonNode) {
+        if (jsonNode.isTextual())
+            return List.of(jsonNode.textValue());
+
+        if (jsonNode.has("value"))
+            return List.of(jsonNode.get("value").textValue());
+
+        if (jsonNode.has("uri"))
+            return List.of(jsonNode.get("uri").textValue());
+
+        if (jsonNode.has("items")) {
+            List<String> itemValues = new ArrayList<>(jsonNode.get("items").findValuesAsText("value"));
+            itemValues.addAll(jsonNode.get("items").findValuesAsText("uri"));
+            return itemValues;
+        }
+
+        return Collections.emptyList();
     }
 }

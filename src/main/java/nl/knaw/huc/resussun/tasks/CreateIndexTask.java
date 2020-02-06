@@ -4,6 +4,7 @@ import io.dropwizard.servlets.tasks.Task;
 import nl.knaw.huc.resussun.api.CollectionMetadata;
 import nl.knaw.huc.resussun.api.CollectionsMetadataMapper;
 import nl.knaw.huc.resussun.api.QueryResponse;
+import nl.knaw.huc.resussun.api.QueryResponseItem;
 import nl.knaw.huc.resussun.api.QueryResponseMapper;
 import nl.knaw.huc.resussun.api.Timbuctoo;
 import nl.knaw.huc.resussun.api.TimbuctooException;
@@ -57,7 +58,7 @@ public class CreateIndexTask extends Task {
 
     private static List<String> getPropsFromMetadata(List<CollectionMetadata> collectionMetadata) {
         return collectionMetadata.stream()
-                .filter(prop -> prop.getName().startsWith("rdf_type"))
+                .filter(prop -> prop.getName().startsWith("rdf_type") || prop.isValueType())
                 .map(prop -> {
                     String valueExpr = prop.isValueType() ? "... on Value { value }" : "... on Entity { uri }";
                     if (prop.isList())
@@ -79,17 +80,18 @@ public class CreateIndexTask extends Task {
             queryData(timbuctoo, elasticsearchClient, dataSetId, collectionId, props, queryResponse.getNextCursor());
     }
 
-    private static void processData(RestHighLevelClient elasticsearchClient, List<Map<String, List<String>>> data)
+    private static void processData(RestHighLevelClient elasticsearchClient, List<QueryResponseItem> data)
             throws IOException {
         BulkRequest bulkRequest = new BulkRequest();
         data.iterator().forEachRemaining(entity -> {
-            String uri = entity.get("uri").get(0);
-            List<String> types = entity.containsKey("rdf_type") ? entity.get("rdf_type") : entity.get("rdf_typeList");
-            String title = entity.get("title").get(0);
-
             IndexRequest indexRequest = new IndexRequest("index")
-                    .id(uri)
-                    .source("uri", uri, "types", types, "title", title);
+                    .id(entity.getUri())
+                    .source("uri", entity.getUri(),
+                            "types", entity.getTypes(),
+                            "title", entity.getTitle(),
+                            "values", entity.getValues().values().stream()
+                                    .flatMap(List::stream)
+                                    .collect(Collectors.joining(" ")));
 
             bulkRequest.add(indexRequest);
         });

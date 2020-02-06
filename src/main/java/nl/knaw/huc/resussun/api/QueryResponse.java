@@ -1,13 +1,12 @@
 package nl.knaw.huc.resussun.api;
 
 import java.util.List;
-import java.util.Map;
 
 public class QueryResponse {
     private String nextCursor;
-    private List<Map<String, List<String>>> items;
+    private List<QueryResponseItem> items;
 
-    public QueryResponse(String nextCursor, List<Map<String, List<String>>> items) {
+    public QueryResponse(String nextCursor, List<QueryResponseItem> items) {
         this.nextCursor = nextCursor;
         this.items = items;
     }
@@ -16,7 +15,7 @@ public class QueryResponse {
         return nextCursor;
     }
 
-    public List<Map<String, List<String>>> getItems() {
+    public List<QueryResponseItem> getItems() {
         return items;
     }
 }
