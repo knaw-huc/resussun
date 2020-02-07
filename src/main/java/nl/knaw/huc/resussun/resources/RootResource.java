@@ -2,7 +2,6 @@ package nl.knaw.huc.resussun.resources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
 import nl.knaw.huc.resussun.model.Candidate;
@@ -30,6 +29,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Path("/")
@@ -100,15 +100,16 @@ public class RootResource {
         candidates.put(field, results);
 
         for (final SearchHit hit : response.getHits()) {
-          final JsonNode source = objectMapper.readTree(hit.getSourceAsString());
-          final String type = source.get("rdf_type").get("title").get("value").asText();
-
+          final Map<String, Object> source = hit.getSourceAsMap();
           final Candidate candidate = new Candidate(
                   hit.getId(),
-                  source.get("title").get("value").asText(),
+                  source.get("title").toString(),
                   hit.getScore() * 100,
                   false
-          ).type(type, type);
+          );
+
+          List<String> types = (List<String>) source.get("types");
+          types.forEach(type -> candidate.type(type, type));
 
           results.candidate(candidate);
         }
