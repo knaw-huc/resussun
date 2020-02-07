@@ -22,10 +22,10 @@ public class SearchClient implements Closeable {
     this.elasticsearchClient = elasticsearchClient;
   }
 
-  public void search(String queryText, String field, Consumer<Candidate> candidates)
+  public void search(String queryText, Consumer<Candidate> candidates)
       throws IOException {
     final SearchSourceBuilder query =
-        new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*").queryName(field));
+        new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*"));
     final SearchResponse response =
         elasticsearchClient.search(new SearchRequest("index").source(query), RequestOptions.DEFAULT);
 

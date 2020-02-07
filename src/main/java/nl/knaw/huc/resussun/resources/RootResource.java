@@ -76,7 +76,7 @@ public class RootResource {
   }
 
   private Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
-    final Map<String, Candidates> candidates = new HashMap<>();
+    final Map<String, Candidates> searchResult = new HashMap<>();
 
     try (final SearchClient searchClient = searchClientFactory.createSearchClient()) {
       for (Map.Entry<String, Query> querySet : queries.entrySet()) {
@@ -84,12 +84,12 @@ public class RootResource {
         final String queryText = querySet.getValue().getQuery();
 
         final Candidates results = new Candidates();
-        candidates.put(field, results);
+        searchResult.put(field, results);
 
-        searchClient.search(queryText, field, results::candidate);
+        searchClient.search(queryText, results::addCandidate);
       }
     }
 
-    return candidates;
+    return searchResult;
   }
 }

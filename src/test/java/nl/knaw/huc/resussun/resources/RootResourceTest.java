@@ -66,7 +66,7 @@ public class RootResourceTest {
 
   @Test
   public void emptyQueryResultIsValid() throws Exception {
-    Mockito.doNothing().when(searchClient).search(any(), any(), any());
+    Mockito.doNothing().when(searchClient).search(any(), any());
     final JsonSchema schema = createSchemaValidator("reconciliation_query_result_batch_schema.json");
     final Form form = new Form();
     form.param("queries", "{\"q0\":{\"query\":\"Amstelveen\",\"type\":\"\",\"type_strict\":\"should\"}}");
@@ -82,11 +82,11 @@ public class RootResourceTest {
   @Test
   public void nonEmptyQueryResultIsValid() throws Exception {
     Mockito.doAnswer(invocation -> {
-      Consumer<Candidate> candidateConsumer = invocation.getArgument(2);
+      Consumer<Candidate> candidateConsumer = invocation.getArgument(1);
       candidateConsumer.accept(new Candidate("id1", "name1", 100.0f, true));
       candidateConsumer.accept(new Candidate("id2", "name2", 90.0f, true));
       return null;
-    }).when(searchClient).search(any(), any(), any());
+    }).when(searchClient).search(any(), any());
     final JsonSchema schema = createSchemaValidator("reconciliation_query_result_batch_schema.json");
     final Form form = new Form();
     form.param("queries", "{\"q0\":{\"query\":\"Amstelveen\",\"type\":\"\",\"type_strict\":\"should\"}}");
