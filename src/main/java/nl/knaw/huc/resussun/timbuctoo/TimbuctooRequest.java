@@ -1,4 +1,4 @@
-package nl.knaw.huc.resussun.api;
+package nl.knaw.huc.resussun.timbuctoo;
 
 import java.util.Collections;
 import java.util.List;

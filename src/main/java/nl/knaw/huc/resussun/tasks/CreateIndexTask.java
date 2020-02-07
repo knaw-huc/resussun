@@ -1,14 +1,14 @@
 package nl.knaw.huc.resussun.tasks;
 
 import io.dropwizard.servlets.tasks.Task;
-import nl.knaw.huc.resussun.api.CollectionMetadata;
-import nl.knaw.huc.resussun.api.CollectionsMetadataMapper;
-import nl.knaw.huc.resussun.api.QueryResponse;
-import nl.knaw.huc.resussun.api.QueryResponseItem;
-import nl.knaw.huc.resussun.api.QueryResponseMapper;
-import nl.knaw.huc.resussun.api.Timbuctoo;
-import nl.knaw.huc.resussun.api.TimbuctooException;
-import nl.knaw.huc.resussun.api.TimbuctooRequest;
+import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
+import nl.knaw.huc.resussun.timbuctoo.CollectionsMetadataMapper;
+import nl.knaw.huc.resussun.timbuctoo.QueryResponse;
+import nl.knaw.huc.resussun.timbuctoo.QueryResponseItem;
+import nl.knaw.huc.resussun.timbuctoo.QueryResponseMapper;
+import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
+import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
+import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
 import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;

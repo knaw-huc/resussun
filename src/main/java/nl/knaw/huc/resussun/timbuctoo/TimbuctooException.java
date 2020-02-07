@@ -1,4 +1,4 @@
-package nl.knaw.huc.resussun.api;
+package nl.knaw.huc.resussun.timbuctoo;
 
 public class TimbuctooException extends Exception {
     public TimbuctooException(String message) {
