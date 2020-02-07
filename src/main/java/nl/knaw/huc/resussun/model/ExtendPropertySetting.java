@@ -9,38 +9,39 @@ import java.util.TreeMap;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExtendPropertySetting<T> {
-    @JsonProperty
-    private String name;
+  @JsonProperty
+  private String name;
 
-    @JsonProperty
-    private String label;
+  @JsonProperty
+  private String label;
 
-    @JsonProperty
-    private String type;
+  @JsonProperty
+  private String type;
 
-    @JsonProperty("default")
-    private T defaultValue;
+  @JsonProperty("default")
+  private T defaultValue;
 
-    @JsonProperty("help_text")
-    private String helpText;
+  @JsonProperty("help_text")
+  private String helpText;
 
-    @JsonProperty
-    @JsonSerialize(using = MapToListSerializer.MapToChoicesList.class)
-    private Map<String, String> choices;
+  @JsonProperty
+  @JsonSerialize(using = MapToListSerializer.MapToChoicesList.class)
+  private Map<String, String> choices;
 
-    public ExtendPropertySetting(String name, String label, String type, T defaultValue, String helpText) {
-        this.name = name;
-        this.label = label;
-        this.type = type;
-        this.defaultValue = defaultValue;
-        this.helpText = helpText;
+  public ExtendPropertySetting(String name, String label, String type, T defaultValue, String helpText) {
+    this.name = name;
+    this.label = label;
+    this.type = type;
+    this.defaultValue = defaultValue;
+    this.helpText = helpText;
+  }
+
+  public ExtendPropertySetting<T> choice(String value, String name) {
+    if (choices == null) {
+      choices = new TreeMap<>();
     }
 
-    public ExtendPropertySetting<T> choice(String value, String name) {
-        if (choices == null)
-            choices = new TreeMap<>();
-
-        choices.put(value, name);
-        return this;
-    }
+    choices.put(value, name);
+    return this;
+  }
 }

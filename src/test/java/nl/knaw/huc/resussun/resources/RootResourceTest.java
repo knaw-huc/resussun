@@ -99,11 +99,9 @@ public class RootResourceTest {
     assertThat(validationMessage, validationReport, Matchers.hasSize(0));
   }
 
-  private JsonSchema createSchemaValidator(String s) throws IOException {
+  private JsonSchema createSchemaValidator(String schemaPath) throws IOException {
     final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
-    return schemaFactory.getSchema(
-        getResource(s).openStream()
-    );
+    return schemaFactory.getSchema(getResource(schemaPath).openStream());
   }
 
 }
