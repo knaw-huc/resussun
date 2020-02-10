@@ -9,7 +9,7 @@ public class Candidates {
     @JsonProperty
     private List<Candidate> result = new ArrayList<>();
 
-    public Candidates candidate(Candidate candidate) {
+    public Candidates addCandidate(Candidate candidate) {
         result.add(candidate);
         return this;
     }

@@ -3,18 +3,11 @@ package nl.knaw.huc.resussun.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
-import nl.knaw.huc.resussun.model.Candidate;
+import nl.knaw.huc.resussun.configuration.SearchClientFactory;
 import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.model.Query;
 import nl.knaw.huc.resussun.model.ServiceManifest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
+import nl.knaw.huc.resussun.search.SearchClient;
 import org.glassfish.jersey.server.JSONP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +22,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Path("/")
@@ -38,11 +30,11 @@ public class RootResource {
 
   public static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
   private final ObjectMapper objectMapper;
-  private final ElasticSearchClientFactory elasticSearchClientFactory;
+  private final SearchClientFactory searchClientFactory;
 
-  public RootResource(ElasticSearchClientFactory elasticSearchClientFactory) {
+  public RootResource(SearchClientFactory searchClientFactory) {
     objectMapper = new ObjectMapper();
-    this.elasticSearchClientFactory = elasticSearchClientFactory;
+    this.searchClientFactory = searchClientFactory;
   }
 
   @GET
@@ -84,38 +76,20 @@ public class RootResource {
   }
 
   private Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
-    final Map<String, Candidates> candidates = new HashMap<>();
+    final Map<String, Candidates> searchResult = new HashMap<>();
 
-    try (final RestHighLevelClient elasticsearchClient = elasticSearchClientFactory.build()) {
+    try (final SearchClient searchClient = searchClientFactory.createSearchClient()) {
       for (Map.Entry<String, Query> querySet : queries.entrySet()) {
         final String field = querySet.getKey();
         final String queryText = querySet.getValue().getQuery();
 
-        final SearchSourceBuilder query =
-                new SearchSourceBuilder().query(QueryBuilders.queryStringQuery("*" + queryText + "*").queryName(field));
-        final SearchResponse response =
-                elasticsearchClient.search(new SearchRequest("index").source(query), RequestOptions.DEFAULT);
-
         final Candidates results = new Candidates();
-        candidates.put(field, results);
+        searchResult.put(field, results);
 
-        for (final SearchHit hit : response.getHits()) {
-          final Map<String, Object> source = hit.getSourceAsMap();
-          final Candidate candidate = new Candidate(
-                  hit.getId(),
-                  source.get("title").toString(),
-                  hit.getScore() * 100,
-                  false
-          );
-
-          List<String> types = (List<String>) source.get("types");
-          types.forEach(type -> candidate.type(type, type));
-
-          results.candidate(candidate);
-        }
+        searchClient.search(queryText, results::addCandidate);
       }
     }
 
-    return candidates;
+    return searchResult;
   }
 }
