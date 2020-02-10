@@ -14,7 +14,7 @@ public class ElasticsearchHealthCheck extends HealthCheck {
 
   @Override
   protected Result check() throws Exception {
-    try(final RestHighLevelClient elasticsearchClient = elasticsearchClientFactory.build()) {
+    try (final RestHighLevelClient elasticsearchClient = elasticsearchClientFactory.build()) {
       boolean canReach = elasticsearchClient.ping(RequestOptions.DEFAULT);
 
       return canReach ?

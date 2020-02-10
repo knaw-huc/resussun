@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Candidates {
-    @JsonProperty
-    private List<Candidate> result = new ArrayList<>();
+  @JsonProperty
+  private List<Candidate> result = new ArrayList<>();
 
-    public Candidates addCandidate(Candidate candidate) {
-        result.add(candidate);
-        return this;
-    }
+  public Candidates addCandidate(Candidate candidate) {
+    result.add(candidate);
+    return this;
+  }
 }

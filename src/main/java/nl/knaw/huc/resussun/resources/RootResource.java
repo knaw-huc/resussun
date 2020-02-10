@@ -72,7 +72,7 @@ public class RootResource {
 
   private ServiceManifest createServiceManifest() {
     return new ServiceManifest("Timbuctoo OpenRefine Recon API",
-            "http://example.org/idetifierspace", "http://example.org/schemaspace");
+        "http://example.org/idetifierspace", "http://example.org/schemaspace");
   }
 
   private Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
