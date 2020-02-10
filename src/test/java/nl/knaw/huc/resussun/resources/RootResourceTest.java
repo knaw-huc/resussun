@@ -8,6 +8,7 @@ import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import nl.knaw.huc.resussun.configuration.SearchClientFactory;
 import nl.knaw.huc.resussun.model.Candidate;
+import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.search.SearchClient;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -19,8 +20,10 @@ import org.mockito.Mockito;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.google.common.io.Resources.getResource;
@@ -30,7 +33,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
-
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class RootResourceTest {
   private static final SearchClientFactory SEARCH_CLIENT_FACTORY = mock(SearchClientFactory.class);
@@ -39,7 +41,6 @@ public class RootResourceTest {
       .addResource(new RootResource(SEARCH_CLIENT_FACTORY))
       .build();
   private SearchClient searchClient;
-
 
   @BeforeEach
   public void setUp() {
@@ -66,7 +67,9 @@ public class RootResourceTest {
 
   @Test
   public void emptyQueryResultIsValid() throws Exception {
-    Mockito.doNothing().when(searchClient).search(any(), any());
+    Mockito.doAnswer(invocation -> {
+      return Map.of("q0", new Candidates(Collections.emptyList()));
+    }).when(searchClient).search(any());
     final JsonSchema schema = createSchemaValidator("reconciliation_query_result_batch_schema.json");
     final Form form = new Form();
     form.param("queries", "{\"q0\":{\"query\":\"Amstelveen\",\"type\":\"\",\"type_strict\":\"should\"}}");
@@ -82,11 +85,11 @@ public class RootResourceTest {
   @Test
   public void nonEmptyQueryResultIsValid() throws Exception {
     Mockito.doAnswer(invocation -> {
-      Consumer<Candidate> candidateConsumer = invocation.getArgument(1);
-      candidateConsumer.accept(new Candidate("id1", "name1", 100.0f, true));
-      candidateConsumer.accept(new Candidate("id2", "name2", 90.0f, true));
-      return null;
-    }).when(searchClient).search(any(), any());
+      return Map.of("q0", new Candidates(List.of(
+          new Candidate("id1", "name1", 100.0f, true),
+          new Candidate("id2", "name2", 90.0f, true)
+      )));
+    }).when(searchClient).search(any());
     final JsonSchema schema = createSchemaValidator("reconciliation_query_result_batch_schema.json");
     final Form form = new Form();
     form.param("queries", "{\"q0\":{\"query\":\"Amstelveen\",\"type\":\"\",\"type_strict\":\"should\"}}");
@@ -103,5 +106,4 @@ public class RootResourceTest {
     final JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance();
     return schemaFactory.getSchema(getResource(schemaPath).openStream());
   }
-
 }
