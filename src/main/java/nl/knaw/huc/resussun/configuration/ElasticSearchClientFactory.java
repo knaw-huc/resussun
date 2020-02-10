@@ -15,9 +15,9 @@ public class ElasticSearchClientFactory implements SearchClientFactory {
 
   @JsonCreator
   public ElasticSearchClientFactory(
-    @JsonProperty("hostName") String hostName,
-    @JsonProperty("port") int port,
-    @JsonProperty("scheme") String scheme
+      @JsonProperty("hostName") String hostName,
+      @JsonProperty("port") int port,
+      @JsonProperty("scheme") String scheme
   ) {
     this.hostName = hostName;
     this.port = port;

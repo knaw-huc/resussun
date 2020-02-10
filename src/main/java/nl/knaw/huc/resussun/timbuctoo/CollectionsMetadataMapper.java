@@ -36,8 +36,8 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
                         .filter(col -> !col.get("collectionId").asText().contains("unknown"))
                         .filter(col -> !col.get("collectionId").asText().contains("Provenance"))
                         .collect(Collectors.toMap(
-                          col -> col.get("collectionId").asText(),
-                          CollectionsMetadataMapper::mapListOfMetadata
+                            col -> col.get("collectionId").asText(),
+                            CollectionsMetadataMapper::mapListOfMetadata
                         ));
   }
 }

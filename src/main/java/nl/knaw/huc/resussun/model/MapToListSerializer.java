@@ -19,6 +19,7 @@ public class MapToListSerializer extends JsonSerializer<Map<String, String>> {
   @Override
   public void serialize(Map<String, String> values, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
+
     gen.writeStartArray();
     for (Map.Entry<String, String> entry : values.entrySet()) {
       gen.writeStartObject();
