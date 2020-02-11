@@ -21,7 +21,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 @Path("/")
@@ -55,8 +54,7 @@ public class RootResource {
       try {
         Map<String, Query> queries = objectMapper.readValue(queriesJson, new TypeReference<>() {
         });
-        Map<String, Candidates> searchResults = search(queries);
-        return Response.ok(searchResults).build();
+        return Response.ok(search(queries)).build();
 
       } catch (JsonProcessingException e) {
         LOG.info("request not supported: {}", e.getMessage());
@@ -76,20 +74,8 @@ public class RootResource {
   }
 
   private Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
-    final Map<String, Candidates> searchResult = new HashMap<>();
-
     try (final SearchClient searchClient = searchClientFactory.createSearchClient()) {
-      for (Map.Entry<String, Query> querySet : queries.entrySet()) {
-        final String field = querySet.getKey();
-        final String queryText = querySet.getValue().getQuery();
-
-        final Candidates results = new Candidates();
-        searchResult.put(field, results);
-
-        searchClient.search(queryText, results::addCandidate);
-      }
+      return searchClient.search(queries);
     }
-
-    return searchResult;
   }
 }
