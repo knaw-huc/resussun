@@ -32,8 +32,10 @@ public class SearchClient implements Closeable {
   }
 
   public Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
+    // Transform the queries map to a list to keep the order of the queries and their identifiers consistent
     final List<Map.Entry<String, Query>> queriesList = new ArrayList<>(queries.entrySet());
 
+    // Map the queries to ElasticSearch search requests
     final MultiSearchRequest searchRequest = new MultiSearchRequest();
     queriesList.stream()
                .map(Map.Entry::getValue)
@@ -42,6 +44,7 @@ public class SearchClient implements Closeable {
 
     final MultiSearchResponse response = elasticsearchClient.msearch(searchRequest, RequestOptions.DEFAULT);
 
+    // Map the ElasticSearch search hits to candidates
     final List<Candidates> candidates =
         Arrays.stream(response.getResponses())
               .map(MultiSearchResponse.Item::getResponse)
@@ -49,6 +52,7 @@ public class SearchClient implements Closeable {
               .map(SearchClient::getCandidates)
               .collect(Collectors.toList());
 
+    // Zip the query identifiers and the found candidates together
     return IntStream.range(0, queriesList.size()).boxed().collect(Collectors.toMap(
         i -> queriesList.get(i).getKey(),
         candidates::get
@@ -80,16 +84,16 @@ public class SearchClient implements Closeable {
   private static Candidates getCandidates(SearchHits searchHits) {
     return new Candidates(
         Arrays.stream(searchHits.getHits()).map(hit -> {
-          Map<String, Object> source = hit.getSourceAsMap();
-
-          Candidate candidate = new Candidate(
+          final Map<String, Object> source = hit.getSourceAsMap();
+          final Candidate candidate = new Candidate(
               hit.getId(),
               source.get("title").toString(),
               hit.getScore(),
               false
           );
 
-          List<String> types = (List<String>) source.get("types");
+          // Types are mapped to a list of strings in ElasticSearch, so we can safely cast the object to a list
+          final List<String> types = (List<String>) source.get("types");
           types.forEach(type -> candidate.type(type, type));
 
           return candidate;
