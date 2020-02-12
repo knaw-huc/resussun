@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.io.Resources.getResource;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -63,6 +64,15 @@ public class RootResourceTest {
     final String validationMessage = String.join("\n", validationReport.stream().map(ValidationMessage::getMessage)
                                                                        .collect(Collectors.toSet()));
     assertThat(validationMessage, validationReport, Matchers.hasSize(0));
+  }
+
+  @Test
+  public void serviceManifestCallbackIsValid() throws Exception {
+    final String control = RESOURCES.target("/").request().get(String.class);
+
+    final String response = RESOURCES.target("/").queryParam("callback", "callback").request().get(String.class);
+
+    assertThat(response, is(String.format("callback(%s);", control)));
   }
 
   @Test

@@ -8,7 +8,6 @@ import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.model.Query;
 import nl.knaw.huc.resussun.model.ServiceManifest;
 import nl.knaw.huc.resussun.search.SearchClient;
-import org.glassfish.jersey.server.JSONP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,19 +36,17 @@ public class RootResource {
   }
 
   @GET
-  @JSONP(queryParam = "callback")
-  public Response get(@QueryParam("queries") String queries) {
-    return handleRequest(queries);
+  public Response get(@QueryParam("queries") String queries, @QueryParam("callback") String callback) {
+    return handleRequest(queries, callback);
   }
 
   @POST
-  @JSONP(queryParam = "callback")
   @Consumes("application/x-www-form-urlencoded")
-  public Response post(@FormParam("queries") String queries) {
-    return handleRequest(queries);
+  public Response post(@FormParam("queries") String queries, @QueryParam("callback") String callback) {
+    return handleRequest(queries, callback);
   }
 
-  private Response handleRequest(String queriesJson) {
+  private Response handleRequest(String queriesJson, String callback) {
     if (queriesJson != null) {
       try {
         Map<String, Query> queries = objectMapper.readValue(queriesJson, new TypeReference<>() {
@@ -63,9 +60,17 @@ public class RootResource {
         LOG.error("Could not execute query", e);
         return Response.serverError().build();
       }
+    } else if (callback != null) {
+      try {
+        return Response.ok(String.format("%s(%s);", callback, objectMapper.writeValueAsString(createServiceManifest())))
+                       .build();
+      } catch (JsonProcessingException e) {
+        LOG.error("Error processing manifest", e);
+        return Response.serverError().build();
+      }
     }
-
     return Response.ok(createServiceManifest()).build();
+
   }
 
   private ServiceManifest createServiceManifest() {
