@@ -8,6 +8,7 @@ import io.dropwizard.setup.Environment;
 import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
 import nl.knaw.huc.resussun.configuration.JsonWithPaddingInterceptor;
 import nl.knaw.huc.resussun.healthchecks.ElasticsearchHealthCheck;
+import nl.knaw.huc.resussun.resources.PreviewResource;
 import nl.knaw.huc.resussun.resources.RootResource;
 import nl.knaw.huc.resussun.tasks.CreateIndexTask;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -47,6 +48,7 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
 
     final ElasticSearchClientFactory elasticsearchClientFactory = config.getElasticSearchClientFactory();
     environment.jersey().register(new RootResource(elasticsearchClientFactory));
+    environment.jersey().register(new PreviewResource(elasticsearchClientFactory));
     environment.jersey().register(new JsonWithPaddingInterceptor());
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,
         LoggingFeature.Verbosity.PAYLOAD_ANY, LoggingFeature.DEFAULT_MAX_ENTITY_SIZE));

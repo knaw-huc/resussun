@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.knaw.huc.resussun.configuration.SearchClientFactory;
 import nl.knaw.huc.resussun.model.Candidates;
+import nl.knaw.huc.resussun.model.Preview;
 import nl.knaw.huc.resussun.model.Query;
 import nl.knaw.huc.resussun.model.ServiceManifest;
 import nl.knaw.huc.resussun.search.SearchClient;
@@ -65,7 +66,8 @@ public class RootResource {
 
   private ServiceManifest createServiceManifest() {
     return new ServiceManifest("Timbuctoo OpenRefine Recon API",
-        "http://example.org/idetifierspace", "http://example.org/schemaspace");
+        "http://example.org/idetifierspace", "http://example.org/schemaspace")
+        .preview(new Preview("http://localhost:8080/preview?id={{id}}", 200, 300));
   }
 
   private Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
