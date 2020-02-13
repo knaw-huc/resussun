@@ -6,6 +6,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
+import nl.knaw.huc.resussun.configuration.JsonWithPaddingInterceptor;
 import nl.knaw.huc.resussun.configuration.SearchClientFactory;
 import nl.knaw.huc.resussun.model.Candidate;
 import nl.knaw.huc.resussun.model.Candidates;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.io.Resources.getResource;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -39,6 +41,7 @@ public class RootResourceTest {
   public static final ResourceExtension RESOURCES = ResourceExtension
       .builder()
       .addResource(new RootResource(SEARCH_CLIENT_FACTORY))
+      .addResource(new JsonWithPaddingInterceptor())
       .build();
   private SearchClient searchClient;
 
@@ -63,6 +66,15 @@ public class RootResourceTest {
     final String validationMessage = String.join("\n", validationReport.stream().map(ValidationMessage::getMessage)
                                                                        .collect(Collectors.toSet()));
     assertThat(validationMessage, validationReport, Matchers.hasSize(0));
+  }
+
+  @Test
+  public void serviceManifestCallbackIsValid() throws Exception {
+    final String control = RESOURCES.target("/").request().get(String.class);
+
+    final String response = RESOURCES.target("/").queryParam("callback", "callback").request().get(String.class);
+
+    assertThat(response, is(String.format("callback(%s);", control)));
   }
 
   @Test

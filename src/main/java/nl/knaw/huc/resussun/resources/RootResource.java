@@ -8,7 +8,6 @@ import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.model.Query;
 import nl.knaw.huc.resussun.model.ServiceManifest;
 import nl.knaw.huc.resussun.search.SearchClient;
-import org.glassfish.jersey.server.JSONP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +25,6 @@ import java.util.Map;
 @Path("/")
 @Produces({"application/json", "application/javascript"})
 public class RootResource {
-
   public static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
   private final ObjectMapper objectMapper;
   private final SearchClientFactory searchClientFactory;
@@ -37,13 +35,11 @@ public class RootResource {
   }
 
   @GET
-  @JSONP(queryParam = "callback")
   public Response get(@QueryParam("queries") String queries) {
     return handleRequest(queries);
   }
 
   @POST
-  @JSONP(queryParam = "callback")
   @Consumes("application/x-www-form-urlencoded")
   public Response post(@FormParam("queries") String queries) {
     return handleRequest(queries);
@@ -55,7 +51,6 @@ public class RootResource {
         Map<String, Query> queries = objectMapper.readValue(queriesJson, new TypeReference<>() {
         });
         return Response.ok(search(queries)).build();
-
       } catch (JsonProcessingException e) {
         LOG.info("request not supported: {}", e.getMessage());
         return Response.status(Response.Status.BAD_REQUEST).build();
