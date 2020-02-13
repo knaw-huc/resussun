@@ -31,8 +31,8 @@ public class JsonWithPaddingInterceptor implements WriterInterceptor {
     final UriInfo uriInfo = containerRequest.getUriInfo();
     final MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
     final List<String> queryParameter = queryParameters.get(CALLBACK_PARAM);
-    final String callback = (queryParameter != null && !queryParameter.isEmpty() && !queryParameter.get(0).isEmpty())
-        ? queryParameter.get(0) : null;
+    final String callback = (queryParameter != null && !queryParameter.isEmpty() && !queryParameter.get(0).isEmpty()) ?
+        queryParameter.get(0) : null;
 
     if (callback != null) {
       context.setMediaType(MediaType.APPLICATION_JSON_TYPE);
