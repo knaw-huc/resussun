@@ -25,7 +25,6 @@ import java.util.Map;
 @Path("/")
 @Produces({"application/json", "application/javascript"})
 public class RootResource {
-
   public static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
   private final ObjectMapper objectMapper;
   private final SearchClientFactory searchClientFactory;
@@ -36,23 +35,22 @@ public class RootResource {
   }
 
   @GET
-  public Response get(@QueryParam("queries") String queries, @QueryParam("callback") String callback) {
-    return handleRequest(queries, callback);
+  public Response get(@QueryParam("queries") String queries) {
+    return handleRequest(queries);
   }
 
   @POST
   @Consumes("application/x-www-form-urlencoded")
-  public Response post(@FormParam("queries") String queries, @QueryParam("callback") String callback) {
-    return handleRequest(queries, callback);
+  public Response post(@FormParam("queries") String queries) {
+    return handleRequest(queries);
   }
 
-  private Response handleRequest(String queriesJson, String callback) {
+  private Response handleRequest(String queriesJson) {
     if (queriesJson != null) {
       try {
         Map<String, Query> queries = objectMapper.readValue(queriesJson, new TypeReference<>() {
         });
         return Response.ok(search(queries)).build();
-
       } catch (JsonProcessingException e) {
         LOG.info("request not supported: {}", e.getMessage());
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -60,17 +58,9 @@ public class RootResource {
         LOG.error("Could not execute query", e);
         return Response.serverError().build();
       }
-    } else if (callback != null) {
-      try {
-        return Response.ok(String.format("%s(%s);", callback, objectMapper.writeValueAsString(createServiceManifest())))
-                       .build();
-      } catch (JsonProcessingException e) {
-        LOG.error("Error processing manifest", e);
-        return Response.serverError().build();
-      }
     }
-    return Response.ok(createServiceManifest()).build();
 
+    return Response.ok(createServiceManifest()).build();
   }
 
   private ServiceManifest createServiceManifest() {

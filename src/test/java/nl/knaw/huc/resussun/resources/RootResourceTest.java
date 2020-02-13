@@ -6,6 +6,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
+import nl.knaw.huc.resussun.configuration.JsonWithPaddingInterceptor;
 import nl.knaw.huc.resussun.configuration.SearchClientFactory;
 import nl.knaw.huc.resussun.model.Candidate;
 import nl.knaw.huc.resussun.model.Candidates;
@@ -40,6 +41,7 @@ public class RootResourceTest {
   public static final ResourceExtension RESOURCES = ResourceExtension
       .builder()
       .addResource(new RootResource(SEARCH_CLIENT_FACTORY))
+      .addResource(new JsonWithPaddingInterceptor())
       .build();
   private SearchClient searchClient;
 
