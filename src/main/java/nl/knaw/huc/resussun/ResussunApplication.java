@@ -47,7 +47,7 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
     enableCors(environment);
 
     final ElasticSearchClientFactory elasticsearchClientFactory = config.getElasticSearchClientFactory();
-    environment.jersey().register(new RootResource(elasticsearchClientFactory));
+    environment.jersey().register(new RootResource(elasticsearchClientFactory, config.getUrlHelperFactory()));
     environment.jersey().register(new PreviewResource(elasticsearchClientFactory));
     environment.jersey().register(new JsonWithPaddingInterceptor());
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,

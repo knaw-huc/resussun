@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.knaw.huc.resussun.configuration.SearchClientFactory;
+import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
 import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.model.Preview;
 import nl.knaw.huc.resussun.model.Query;
@@ -29,10 +30,13 @@ public class RootResource {
   public static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
   private final ObjectMapper objectMapper;
   private final SearchClientFactory searchClientFactory;
+  private final ServiceManifest serviceManifest;
 
-  public RootResource(SearchClientFactory searchClientFactory) {
+  public RootResource(SearchClientFactory searchClientFactory,
+                      UrlHelperFactory urlHelperFactory) {
     objectMapper = new ObjectMapper();
     this.searchClientFactory = searchClientFactory;
+    serviceManifest = createServiceManifest(urlHelperFactory);
   }
 
   @GET
@@ -61,13 +65,16 @@ public class RootResource {
       }
     }
 
-    return Response.ok(createServiceManifest()).build();
+    return Response.ok(serviceManifest).build();
   }
 
-  private ServiceManifest createServiceManifest() {
+  private static ServiceManifest createServiceManifest(UrlHelperFactory urlHelperFactory) {
+    final String previewUrl;
+    previewUrl = urlHelperFactory.urlHelper().path("preview").queryParamTemplate("id", "{{id}}").template();
+
     return new ServiceManifest("Timbuctoo OpenRefine Recon API",
         "http://example.org/idetifierspace", "http://example.org/schemaspace")
-        .preview(new Preview("http://localhost:8080/preview?id={{id}}", 200, 300));
+        .preview(new Preview(previewUrl , 200, 300));
   }
 
   private Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
