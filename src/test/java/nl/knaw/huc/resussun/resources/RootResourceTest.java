@@ -8,6 +8,7 @@ import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import nl.knaw.huc.resussun.configuration.JsonWithPaddingInterceptor;
 import nl.knaw.huc.resussun.configuration.SearchClientFactory;
+import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
 import nl.knaw.huc.resussun.model.Candidate;
 import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.search.SearchClient;
@@ -38,9 +39,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class RootResourceTest {
   private static final SearchClientFactory SEARCH_CLIENT_FACTORY = mock(SearchClientFactory.class);
+  public static final UrlHelperFactory URL_HELPER_FACTORY = new UrlHelperFactory("http://www.example.org");
   public static final ResourceExtension RESOURCES = ResourceExtension
       .builder()
-      .addResource(new RootResource(SEARCH_CLIENT_FACTORY))
+      .addResource(new RootResource(SEARCH_CLIENT_FACTORY, URL_HELPER_FACTORY))
       .addResource(new JsonWithPaddingInterceptor())
       .build();
   private SearchClient searchClient;

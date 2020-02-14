@@ -3,6 +3,8 @@ package nl.knaw.huc.resussun.search;
 import nl.knaw.huc.resussun.model.Candidate;
 import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.model.Query;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class SearchClient implements Closeable {
+  public static final String INDEX_NAME = "index";
   private final RestHighLevelClient elasticsearchClient;
 
   public SearchClient(RestHighLevelClient elasticsearchClient) {
@@ -75,7 +78,7 @@ public class SearchClient implements Closeable {
           .filter(QueryBuilders.termQuery("types", query.getType()));
     }
 
-    return new SearchRequest("index").source(
+    return new SearchRequest(INDEX_NAME).source(
         new SearchSourceBuilder()
             .query(builder)
             .size((query.getLimit() != null) ? query.getLimit() : 10));
@@ -104,5 +107,13 @@ public class SearchClient implements Closeable {
   @Override
   public void close() throws IOException {
     elasticsearchClient.close();
+  }
+
+  public String getTitleById(String id) throws IOException {
+    final GetRequest getRequest = new GetRequest(INDEX_NAME, id);
+    final GetResponse response = elasticsearchClient.get(getRequest, RequestOptions.DEFAULT);
+    final Map<String, Object> source = response.getSourceAsMap();
+
+    return (String) source.get("title");
   }
 }
