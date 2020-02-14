@@ -69,8 +69,8 @@ public class RootResource {
   }
 
   private static ServiceManifest createServiceManifest(UrlHelperFactory urlHelperFactory) {
-    final String previewUrl;
-    previewUrl = urlHelperFactory.urlHelper().path("preview").queryParamTemplate("id", "{{id}}").template();
+    final String previewUrl = urlHelperFactory.urlHelper().path("preview")
+                                              .queryParamTemplate("id", "{{id}}").template();
 
     return new ServiceManifest("Timbuctoo OpenRefine Recon API",
         "http://example.org/idetifierspace", "http://example.org/schemaspace")

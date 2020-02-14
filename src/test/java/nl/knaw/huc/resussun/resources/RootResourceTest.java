@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class RootResourceTest {
   private static final SearchClientFactory SEARCH_CLIENT_FACTORY = mock(SearchClientFactory.class);
-  public static final UrlHelperFactory URL_HELPER_FACTORY = mock(UrlHelperFactory.class);
+  public static final UrlHelperFactory URL_HELPER_FACTORY = new UrlHelperFactory("http://www.example.org");
   public static final ResourceExtension RESOURCES = ResourceExtension
       .builder()
       .addResource(new RootResource(SEARCH_CLIENT_FACTORY, URL_HELPER_FACTORY))
