@@ -5,13 +5,15 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
+import nl.knaw.huc.resussun.configuration.ManagedElasticSearchClient;
 import nl.knaw.huc.resussun.configuration.JsonWithPaddingInterceptor;
 import nl.knaw.huc.resussun.healthchecks.ElasticsearchHealthCheck;
 import nl.knaw.huc.resussun.resources.PreviewResource;
 import nl.knaw.huc.resussun.resources.RootResource;
+import nl.knaw.huc.resussun.search.SearchClient;
 import nl.knaw.huc.resussun.tasks.CreateIndexTask;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.glassfish.jersey.logging.LoggingFeature;
 
 import javax.servlet.DispatcherType;
@@ -46,15 +48,21 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
   public void run(final ResussunConfiguration config, final Environment environment) {
     enableCors(environment);
 
-    final ElasticSearchClientFactory elasticsearchClientFactory = config.getElasticSearchClientFactory();
-    environment.jersey().register(new RootResource(elasticsearchClientFactory, config.getUrlHelperFactory()));
-    environment.jersey().register(new PreviewResource(elasticsearchClientFactory));
+    final ManagedElasticSearchClient managedElasticSearchClient = config.getManagedElasticSearchClient();
+    final RestHighLevelClient elasticSearchClient = managedElasticSearchClient.getClient();
+    final SearchClient searchClient = managedElasticSearchClient.createSearchClient();
+
+    environment.jersey().register(new RootResource(searchClient, config.getUrlHelperFactory()));
+    environment.jersey().register(new PreviewResource(searchClient));
     environment.jersey().register(new JsonWithPaddingInterceptor());
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,
         LoggingFeature.Verbosity.PAYLOAD_ANY, LoggingFeature.DEFAULT_MAX_ENTITY_SIZE));
-    environment.healthChecks().register("elasticsearch", new ElasticsearchHealthCheck(elasticsearchClientFactory));
 
-    environment.admin().addTask(new CreateIndexTask(elasticsearchClientFactory));
+    environment.healthChecks().register("elasticsearch", new ElasticsearchHealthCheck(elasticSearchClient));
+
+    environment.lifecycle().manage(managedElasticSearchClient);
+
+    environment.admin().addTask(new CreateIndexTask(elasticSearchClient));
   }
 
   private static void enableCors(final Environment environment) {
