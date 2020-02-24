@@ -7,14 +7,11 @@ import com.networknt.schema.ValidationMessage;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import nl.knaw.huc.resussun.configuration.JsonWithPaddingInterceptor;
-import nl.knaw.huc.resussun.configuration.SearchClientFactory;
 import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
 import nl.knaw.huc.resussun.model.Candidate;
 import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.search.SearchClient;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -33,30 +30,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class RootResourceTest {
-  private static final SearchClientFactory SEARCH_CLIENT_FACTORY = mock(SearchClientFactory.class);
+  private static final SearchClient SEARCH_CLIENT = mock(SearchClient.class);
   public static final UrlHelperFactory URL_HELPER_FACTORY = new UrlHelperFactory("http://www.example.org");
   public static final ResourceExtension RESOURCES = ResourceExtension
       .builder()
-      .addResource(new RootResource(SEARCH_CLIENT_FACTORY, URL_HELPER_FACTORY))
+      .addResource(new RootResource(SEARCH_CLIENT, URL_HELPER_FACTORY))
       .addResource(new JsonWithPaddingInterceptor())
       .build();
-  private SearchClient searchClient;
-
-  @BeforeEach
-  public void setUp() {
-    searchClient = mock(SearchClient.class);
-    when(SEARCH_CLIENT_FACTORY.createSearchClient()).thenReturn(searchClient);
-  }
-
-  @AfterEach
-  public void tearDown() {
-    reset(SEARCH_CLIENT_FACTORY);
-  }
 
   @Test
   public void serviceManifestIsValid() throws Exception {
@@ -83,7 +66,7 @@ public class RootResourceTest {
   public void emptyQueryResultIsValid() throws Exception {
     Mockito.doAnswer(invocation -> {
       return Map.of("q0", new Candidates(Collections.emptyList()));
-    }).when(searchClient).search(any());
+    }).when(SEARCH_CLIENT).search(any());
     final JsonSchema schema = createSchemaValidator("reconciliation_query_result_batch_schema.json");
     final Form form = new Form();
     form.param("queries", "{\"q0\":{\"query\":\"Amstelveen\",\"type\":\"\",\"type_strict\":\"should\"}}");
@@ -103,7 +86,7 @@ public class RootResourceTest {
           new Candidate("id1", "name1", 100.0f, true),
           new Candidate("id2", "name2", 90.0f, true)
       )));
-    }).when(searchClient).search(any());
+    }).when(SEARCH_CLIENT).search(any());
     final JsonSchema schema = createSchemaValidator("reconciliation_query_result_batch_schema.json");
     final Form form = new Form();
     form.param("queries", "{\"q0\":{\"query\":\"Amstelveen\",\"type\":\"\",\"type_strict\":\"should\"}}");

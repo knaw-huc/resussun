@@ -1,6 +1,5 @@
 package nl.knaw.huc.resussun.resources;
 
-import nl.knaw.huc.resussun.configuration.SearchClientFactory;
 import nl.knaw.huc.resussun.search.SearchClient;
 
 import javax.ws.rs.GET;
@@ -13,28 +12,22 @@ import java.io.IOException;
 
 @Path("preview")
 public class PreviewResource {
+  private final SearchClient searchClient;
 
-
-  private final SearchClientFactory searchClientFactory;
-
-  public PreviewResource(SearchClientFactory searchClientFactory) {
-
-    this.searchClientFactory = searchClientFactory;
+  public PreviewResource(SearchClient searchClient) {
+    this.searchClient = searchClient;
   }
 
   @GET
   @Produces(MediaType.TEXT_HTML)
   public Response get(@QueryParam("id") String id) {
     try {
-      try (final SearchClient searchClient = searchClientFactory.createSearchClient()) {
-        final String title = searchClient.getTitleById(id);
+      final String title = searchClient.getTitleById(id);
 
-        if (title != null) {
-          return Response.ok(createPage(title)).build();
-        } else {
-          return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
+      if (title != null) {
+        return Response.ok(createPage(title)).build();
+      } else {
+        return Response.status(Response.Status.NOT_FOUND).build();
       }
     } catch (IOException e) {
       return Response.serverError().build();

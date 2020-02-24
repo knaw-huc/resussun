@@ -17,7 +17,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class SearchClient implements Closeable {
+public class SearchClient {
   public static final String INDEX_NAME = "index";
   private final RestHighLevelClient elasticsearchClient;
 
@@ -102,11 +101,6 @@ public class SearchClient implements Closeable {
           return candidate;
         }).collect(Collectors.toList())
     );
-  }
-
-  @Override
-  public void close() throws IOException {
-    elasticsearchClient.close();
   }
 
   public String getTitleById(String id) throws IOException {

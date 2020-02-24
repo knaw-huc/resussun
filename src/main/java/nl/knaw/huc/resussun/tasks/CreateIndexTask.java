@@ -1,7 +1,6 @@
 package nl.knaw.huc.resussun.tasks;
 
 import io.dropwizard.servlets.tasks.Task;
-import nl.knaw.huc.resussun.configuration.ElasticSearchClientFactory;
 import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
 import nl.knaw.huc.resussun.timbuctoo.CollectionsMetadataMapper;
 import nl.knaw.huc.resussun.timbuctoo.QueryResponse;
@@ -28,15 +27,33 @@ public class CreateIndexTask extends Task {
   private static final String TIMBUCTOO_URL = "timbuctooUrl";
   private static final List<String> PARAMS = List.of(DATA_SET_ID, TIMBUCTOO_URL);
 
-  private final ElasticSearchClientFactory elasticSearchClientFactory;
+  private final RestHighLevelClient client;
 
-  public CreateIndexTask(ElasticSearchClientFactory elasticSearchClientFactory) {
+  public CreateIndexTask(RestHighLevelClient client) {
     super("createIndex");
-    this.elasticSearchClientFactory = elasticSearchClientFactory;
+    this.client = client;
   }
 
-  private static void createIndex(RestHighLevelClient elasticsearchClient) throws IOException {
-    elasticsearchClient.indices().create(new CreateIndexRequest("index").mapping(
+  @Override
+  public void execute(Map<String, List<String>> params, PrintWriter out) throws Exception {
+    if (!params.keySet().containsAll(PARAMS)) {
+      throw new Exception("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
+    }
+
+    Timbuctoo timbuctoo = new Timbuctoo(params.get(TIMBUCTOO_URL).get(0));
+    String dataSetId = params.get(DATA_SET_ID).get(0);
+
+    createIndex();
+
+    Map<String, List<CollectionMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
+    for (Map.Entry<String, List<CollectionMetadata>> collectionMetadata : collectionsMetadata.entrySet()) {
+      List<String> props = getPropsFromMetadata(collectionMetadata.getValue());
+      queryData(timbuctoo, dataSetId, collectionMetadata.getKey(), props, null);
+    }
+  }
+
+  private void createIndex() throws IOException {
+    client.indices().create(new CreateIndexRequest("index").mapping(
         "{\n" +
             "  \"properties\": {\n" +
             "    \"uri\": {\n" +
@@ -53,6 +70,37 @@ public class CreateIndexTask extends Task {
             "    }\n" +
             "  }\n" +
             "}", XContentType.JSON), RequestOptions.DEFAULT);
+  }
+
+  private void queryData(Timbuctoo timbuctoo, String dataSetId, String collectionId, List<String> props, String cursor)
+      throws TimbuctooException, IOException {
+    TimbuctooRequest request = TimbuctooRequest.createQueryRequest(dataSetId, collectionId, props, cursor);
+    QueryResponse queryResponse = timbuctoo.executeRequest(request, new QueryResponseMapper());
+
+    processData(queryResponse.getItems());
+
+    if (queryResponse.getNextCursor() != null) {
+      queryData(timbuctoo, dataSetId, collectionId, props, queryResponse.getNextCursor());
+    }
+  }
+
+  private void processData(List<QueryResponseItem> data) throws IOException {
+    BulkRequest bulkRequest = new BulkRequest();
+    data.iterator().forEachRemaining(entity -> {
+      IndexRequest indexRequest = new IndexRequest("index")
+          .id(entity.getUri())
+          .source(
+              "uri", entity.getUri(),
+              "types", entity.getTypes(),
+              "title", entity.getTitle(),
+              "values", entity.getValues().values().stream()
+                              .flatMap(List::stream)
+                              .collect(Collectors.joining(" "))
+          );
+
+      bulkRequest.add(indexRequest);
+    });
+    client.bulk(bulkRequest, RequestOptions.DEFAULT);
   }
 
   private static Map<String, List<CollectionMetadata>> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)
@@ -74,58 +122,5 @@ public class CreateIndexTask extends Task {
           return prop.getName() + " { " + valueExpr + " }";
         })
         .collect(Collectors.toList());
-  }
-
-  private static void queryData(Timbuctoo timbuctoo, RestHighLevelClient elasticsearchClient,
-                                String dataSetId, String collectionId, List<String> props, String cursor)
-      throws TimbuctooException, IOException {
-    TimbuctooRequest request = TimbuctooRequest.createQueryRequest(dataSetId, collectionId, props, cursor);
-    QueryResponse queryResponse = timbuctoo.executeRequest(request, new QueryResponseMapper());
-
-    processData(elasticsearchClient, queryResponse.getItems());
-
-    if (queryResponse.getNextCursor() != null) {
-      queryData(timbuctoo, elasticsearchClient, dataSetId, collectionId, props, queryResponse.getNextCursor());
-    }
-  }
-
-  private static void processData(RestHighLevelClient elasticsearchClient, List<QueryResponseItem> data)
-      throws IOException {
-    BulkRequest bulkRequest = new BulkRequest();
-    data.iterator().forEachRemaining(entity -> {
-      IndexRequest indexRequest = new IndexRequest("index")
-          .id(entity.getUri())
-          .source(
-              "uri", entity.getUri(),
-              "types", entity.getTypes(),
-              "title", entity.getTitle(),
-              "values", entity.getValues().values().stream()
-                              .flatMap(List::stream)
-                              .collect(Collectors.joining(" "))
-          );
-
-      bulkRequest.add(indexRequest);
-    });
-    elasticsearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-  }
-
-  @Override
-  public void execute(Map<String, List<String>> params, PrintWriter out) throws Exception {
-    if (!params.keySet().containsAll(PARAMS)) {
-      throw new Exception("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
-    }
-
-    try (final RestHighLevelClient elasticsearchClient = elasticSearchClientFactory.build()) {
-      Timbuctoo timbuctoo = new Timbuctoo(params.get(TIMBUCTOO_URL).get(0));
-      String dataSetId = params.get(DATA_SET_ID).get(0);
-
-      createIndex(elasticsearchClient);
-
-      Map<String, List<CollectionMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
-      for (Map.Entry<String, List<CollectionMetadata>> collectionMetadata : collectionsMetadata.entrySet()) {
-        List<String> props = getPropsFromMetadata(collectionMetadata.getValue());
-        queryData(timbuctoo, elasticsearchClient, dataSetId, collectionMetadata.getKey(), props, null);
-      }
-    }
   }
 }
