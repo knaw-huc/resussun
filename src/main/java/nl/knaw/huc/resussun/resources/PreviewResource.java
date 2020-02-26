@@ -1,28 +1,29 @@
 package nl.knaw.huc.resussun.resources;
 
+import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.search.SearchClient;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 
-@Path("preview")
 public class PreviewResource {
   private final SearchClient searchClient;
+  private final ApiData apiData;
 
-  public PreviewResource(SearchClient searchClient) {
+  public PreviewResource(SearchClient searchClient, ApiData apiData) {
     this.searchClient = searchClient;
+    this.apiData = apiData;
   }
 
   @GET
   @Produces(MediaType.TEXT_HTML)
   public Response get(@QueryParam("id") String id) {
     try {
-      final String title = searchClient.getTitleById(id);
+      final String title = searchClient.getTitleById(apiData.getDataSourceId(), id);
 
       if (title != null) {
         return Response.ok(createPage(title)).build();

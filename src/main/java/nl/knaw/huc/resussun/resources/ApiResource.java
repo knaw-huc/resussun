@@ -3,6 +3,7 @@ package nl.knaw.huc.resussun.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
 import nl.knaw.huc.resussun.model.Preview;
 import nl.knaw.huc.resussun.model.Query;
@@ -16,43 +17,50 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 
-@Path("/")
-@Produces({"application/json", "application/javascript"})
-public class RootResource {
-  private static final Logger LOG = LoggerFactory.getLogger(RootResource.class);
+@Path("/{api}")
+public class ApiResource {
+  private static final Logger LOG = LoggerFactory.getLogger(ApiResource.class);
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final SearchClient searchClient;
-  private final ServiceManifest serviceManifest;
+  private final UrlHelperFactory urlHelperFactory;
 
-  public RootResource(SearchClient searchClient, UrlHelperFactory urlHelperFactory) {
+  public ApiResource(SearchClient searchClient, UrlHelperFactory urlHelperFactory) {
     this.searchClient = searchClient;
-    serviceManifest = createServiceManifest(urlHelperFactory);
+    this.urlHelperFactory = urlHelperFactory;
   }
 
   @GET
-  public Response get(@QueryParam("queries") String queries) {
-    return handleRequest(queries);
+  @Produces({"application/json", "application/javascript"})
+  public Response get(@PathParam("api") ApiData api, @QueryParam("queries") String queries) {
+    return handleRequest(api, queries);
   }
 
   @POST
   @Consumes("application/x-www-form-urlencoded")
-  public Response post(@FormParam("queries") String queries) {
-    return handleRequest(queries);
+  @Produces({"application/json", "application/javascript"})
+  public Response post(@PathParam("api") ApiData api, @FormParam("queries") String queries) {
+    return handleRequest(api, queries);
   }
 
-  private Response handleRequest(String queriesJson) {
+  @Path("/preview")
+  public PreviewResource preview(@PathParam("api") ApiData api) {
+    return new PreviewResource(searchClient, api);
+  }
+
+  private Response handleRequest(ApiData api, String queriesJson) {
     if (queriesJson != null) {
       try {
         Map<String, Query> queries = OBJECT_MAPPER.readValue(queriesJson, new TypeReference<>() {
         });
-        return Response.ok(searchClient.search(queries)).build();
+        return Response.ok(searchClient.search(api.getDataSourceId(), queries)).build();
       } catch (JsonProcessingException e) {
         LOG.info("request not supported: {}", e.getMessage());
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -62,11 +70,11 @@ public class RootResource {
       }
     }
 
-    return Response.ok(serviceManifest).build();
+    return Response.ok(createServiceManifest(api)).build();
   }
 
-  private static ServiceManifest createServiceManifest(UrlHelperFactory urlHelperFactory) {
-    final String previewUrl = urlHelperFactory.urlHelper().path("preview")
+  private ServiceManifest createServiceManifest(ApiData api) {
+    final String previewUrl = urlHelperFactory.urlHelper(api.getDataSourceId()).path("preview")
                                               .queryParamTemplate("id", "{{id}}").template();
 
     return new ServiceManifest("Timbuctoo OpenRefine Recon API",

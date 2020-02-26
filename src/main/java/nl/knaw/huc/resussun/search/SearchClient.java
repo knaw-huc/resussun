@@ -26,14 +26,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class SearchClient {
-  public static final String INDEX_NAME = "index";
   private final RestHighLevelClient elasticsearchClient;
 
   public SearchClient(RestHighLevelClient elasticsearchClient) {
     this.elasticsearchClient = elasticsearchClient;
   }
 
-  public Map<String, Candidates> search(Map<String, Query> queries) throws IOException {
+  public Map<String, Candidates> search(String indexName, Map<String, Query> queries) throws IOException {
     // Transform the queries map to a list to keep the order of the queries and their identifiers consistent
     final List<Map.Entry<String, Query>> queriesList = new ArrayList<>(queries.entrySet());
 
@@ -41,7 +40,7 @@ public class SearchClient {
     final MultiSearchRequest searchRequest = new MultiSearchRequest();
     queriesList.stream()
                .map(Map.Entry::getValue)
-               .map(SearchClient::getSearchRequest)
+               .map(query -> getSearchRequest(indexName, query))
                .forEach(searchRequest::add);
 
     final MultiSearchResponse response = elasticsearchClient.msearch(searchRequest, RequestOptions.DEFAULT);
@@ -61,7 +60,7 @@ public class SearchClient {
     ));
   }
 
-  private static SearchRequest getSearchRequest(Query query) {
+  private static SearchRequest getSearchRequest(String indexName, Query query) {
     QueryBuilder builder = QueryBuilders
         .multiMatchQuery(query.getQuery())
         .type(MultiMatchQueryBuilder.Type.MOST_FIELDS)
@@ -77,7 +76,7 @@ public class SearchClient {
           .filter(QueryBuilders.termQuery("types", query.getType()));
     }
 
-    return new SearchRequest(INDEX_NAME).source(
+    return new SearchRequest(indexName).source(
         new SearchSourceBuilder()
             .query(builder)
             .size((query.getLimit() != null) ? query.getLimit() : 10));
@@ -103,8 +102,8 @@ public class SearchClient {
     );
   }
 
-  public String getTitleById(String id) throws IOException {
-    final GetRequest getRequest = new GetRequest(INDEX_NAME, id);
+  public String getTitleById(String indexName, String id) throws IOException {
+    final GetRequest getRequest = new GetRequest(indexName, id);
     final GetResponse response = elasticsearchClient.get(getRequest, RequestOptions.DEFAULT);
     final Map<String, Object> source = response.getSourceAsMap();
 

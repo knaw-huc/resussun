@@ -9,6 +9,10 @@ services:
       - "9300:9300"
     networks:
       - nginxproxynetwork
+  redis:
+    image: redis:5-alpine
+    networks:
+      - nginxproxynetwork
   resussun:
     image: knawhuc/resussun:latest
     environment:
