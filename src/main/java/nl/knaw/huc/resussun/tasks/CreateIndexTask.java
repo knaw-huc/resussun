@@ -44,14 +44,16 @@ public class CreateIndexTask extends Task {
   @Override
   public void execute(Map<String, List<String>> params, PrintWriter out) throws Exception {
     if (!params.keySet().containsAll(PARAMS)) {
-      throw new Exception("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
+      out.println("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
+      return;
     }
 
     String dataSetId = params.get(DATA_SET_ID).get(0);
     ApiClient apiClient = new ApiClient(redisConnection, dataSetId);
 
     if (apiClient.hasApi()) {
-      throw new Exception("There is already an index for the dataset with id " + dataSetId);
+      out.println("There is already an index for the dataset with id " + dataSetId);
+      return;
     }
 
     String timbuctooUrl = params.get(TIMBUCTOO_URL).get(0);

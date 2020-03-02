@@ -27,14 +27,16 @@ public class DeleteIndexTask extends Task {
   @Override
   public void execute(Map<String, List<String>> params, PrintWriter out) throws Exception {
     if (!params.containsKey(DATA_SET_ID)) {
-      throw new Exception("Expected parameter: " + DATA_SET_ID);
+      out.println("Expected parameter: " + DATA_SET_ID);
+      return;
     }
 
     String dataSetId = params.get(DATA_SET_ID).get(0);
     ApiClient apiClient = new ApiClient(redisConnection, dataSetId);
 
     if (!apiClient.hasApi()) {
-      throw new Exception("There is no index for the dataset with id " + dataSetId);
+      out.println("There is no index for the dataset with id " + dataSetId);
+      return;
     }
 
     apiClient.deleteApiData();
