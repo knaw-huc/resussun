@@ -1,6 +1,10 @@
 package nl.knaw.huc.resussun.tasks;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.dropwizard.servlets.tasks.Task;
+import io.lettuce.core.api.StatefulRedisConnection;
+import nl.knaw.huc.resussun.api.ApiClient;
+import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
 import nl.knaw.huc.resussun.timbuctoo.CollectionsMetadataMapper;
 import nl.knaw.huc.resussun.timbuctoo.QueryResponse;
@@ -27,23 +31,36 @@ public class CreateIndexTask extends Task {
   private static final String TIMBUCTOO_URL = "timbuctooUrl";
   private static final List<String> PARAMS = List.of(DATA_SET_ID, TIMBUCTOO_URL);
 
-  private final RestHighLevelClient client;
+  private final RestHighLevelClient elasticSearchClient;
+  private final StatefulRedisConnection<String, String> redisConnection;
 
-  public CreateIndexTask(RestHighLevelClient client) {
+  public CreateIndexTask(RestHighLevelClient elasticSearchClient,
+                         StatefulRedisConnection<String, String> redisConnection) {
     super("createIndex");
-    this.client = client;
+    this.elasticSearchClient = elasticSearchClient;
+    this.redisConnection = redisConnection;
   }
 
   @Override
   public void execute(Map<String, List<String>> params, PrintWriter out) throws Exception {
     if (!params.keySet().containsAll(PARAMS)) {
-      throw new Exception("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
+      out.println("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
+      return;
     }
 
-    Timbuctoo timbuctoo = new Timbuctoo(params.get(TIMBUCTOO_URL).get(0));
     String dataSetId = params.get(DATA_SET_ID).get(0);
+    ApiClient apiClient = new ApiClient(redisConnection, dataSetId);
 
-    createIndex();
+    if (apiClient.hasApi()) {
+      out.println("There is already an index for the dataset with id " + dataSetId);
+      return;
+    }
+
+    String timbuctooUrl = params.get(TIMBUCTOO_URL).get(0);
+    Timbuctoo timbuctoo = new Timbuctoo(timbuctooUrl);
+
+    createApi(apiClient, dataSetId, timbuctooUrl);
+    createIndex(dataSetId);
 
     Map<String, List<CollectionMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
     for (Map.Entry<String, List<CollectionMetadata>> collectionMetadata : collectionsMetadata.entrySet()) {
@@ -52,8 +69,13 @@ public class CreateIndexTask extends Task {
     }
   }
 
-  private void createIndex() throws IOException {
-    client.indices().create(new CreateIndexRequest("index").mapping(
+  private void createApi(ApiClient apiClient, String datasetId, String timbuctooUrl) throws JsonProcessingException {
+    ApiData apiData = new ApiData(datasetId, timbuctooUrl);
+    apiClient.setApiData(apiData);
+  }
+
+  private void createIndex(String indexName) throws IOException {
+    elasticSearchClient.indices().create(new CreateIndexRequest(indexName).mapping(
         "{\n" +
             "  \"properties\": {\n" +
             "    \"uri\": {\n" +
@@ -77,17 +99,17 @@ public class CreateIndexTask extends Task {
     TimbuctooRequest request = TimbuctooRequest.createQueryRequest(dataSetId, collectionId, props, cursor);
     QueryResponse queryResponse = timbuctoo.executeRequest(request, new QueryResponseMapper());
 
-    processData(queryResponse.getItems());
+    processData(dataSetId, queryResponse.getItems());
 
     if (queryResponse.getNextCursor() != null) {
       queryData(timbuctoo, dataSetId, collectionId, props, queryResponse.getNextCursor());
     }
   }
 
-  private void processData(List<QueryResponseItem> data) throws IOException {
+  private void processData(String indexName, List<QueryResponseItem> data) throws IOException {
     BulkRequest bulkRequest = new BulkRequest();
     data.iterator().forEachRemaining(entity -> {
-      IndexRequest indexRequest = new IndexRequest("index")
+      IndexRequest indexRequest = new IndexRequest(indexName)
           .id(entity.getUri())
           .source(
               "uri", entity.getUri(),
@@ -100,7 +122,7 @@ public class CreateIndexTask extends Task {
 
       bulkRequest.add(indexRequest);
     });
-    client.bulk(bulkRequest, RequestOptions.DEFAULT);
+    elasticSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
   }
 
   private static Map<String, List<CollectionMetadata>> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)

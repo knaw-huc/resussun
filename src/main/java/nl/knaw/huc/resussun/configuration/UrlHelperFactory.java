@@ -10,17 +10,22 @@ public class UrlHelperFactory {
 
   @JsonCreator
   public UrlHelperFactory(@JsonProperty("publicUrl") String publicUrl) {
-
     this.publicUrl = publicUrl;
   }
 
   public UrlHelper urlHelper() {
-    return new UrlHelper(publicUrl);
+    return urlHelper(null);
   }
 
+  public UrlHelper urlHelper(String dataSourceId) {
+    final UrlHelper urlHelper = new UrlHelper(publicUrl);
+    if (dataSourceId != null) {
+      urlHelper.path(dataSourceId);
+    }
+    return urlHelper;
+  }
 
   public static class UrlHelper {
-
     private final UriBuilder uriBuilder;
 
     private UrlHelper(String publicUrl) {

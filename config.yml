@@ -17,5 +17,9 @@ elasticsearchClient:
   port: ${ELASTICSEARCH_PORT:- 9200}
   scheme: ${ELASTICSEARCH_SCHEME:- http}
 
+redisClient:
+  hostName: ${REDIS_HOST:- localhost}
+  port: ${REDIS_PORT:- 6379}
+
 urlHelper:
   publicUrl: ${PUBLIC_URL:- http://localhost:8080}
