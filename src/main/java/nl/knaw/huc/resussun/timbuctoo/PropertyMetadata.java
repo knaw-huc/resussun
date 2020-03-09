@@ -2,7 +2,7 @@ package nl.knaw.huc.resussun.timbuctoo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CollectionMetadata {
+public class PropertyMetadata {
   @JsonProperty
   private String name;
 

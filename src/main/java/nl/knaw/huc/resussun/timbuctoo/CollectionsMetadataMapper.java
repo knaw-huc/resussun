@@ -11,13 +11,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<String, List<CollectionMetadata>>> {
+public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<String, List<PropertyMetadata>>> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private static List<CollectionMetadata> mapListOfMetadata(JsonNode collection) {
+  private static List<PropertyMetadata> mapListOfMetadata(JsonNode collection) {
     try {
       return Arrays.asList(
-          MAPPER.treeToValue(collection.get("properties").get("items"), CollectionMetadata[].class)
+          MAPPER.treeToValue(collection.get("properties").get("items"), PropertyMetadata[].class)
       );
     } catch (JsonProcessingException e) {
       return Collections.emptyList();
@@ -25,7 +25,7 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
   }
 
   @Override
-  public Map<String, List<CollectionMetadata>> mapResponse(JsonNode json) {
+  public Map<String, List<PropertyMetadata>> mapResponse(JsonNode json) {
     Iterable<JsonNode> collections = () -> json.get("data")
                                                .get("dataSetMetadata")
                                                .get("collectionList")
