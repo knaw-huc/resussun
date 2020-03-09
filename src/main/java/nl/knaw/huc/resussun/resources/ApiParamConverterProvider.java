@@ -1,7 +1,6 @@
 package nl.knaw.huc.resussun.resources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.lettuce.core.api.StatefulRedisConnection;
 import nl.knaw.huc.resussun.api.ApiClient;
 import nl.knaw.huc.resussun.api.ApiData;
 
@@ -13,42 +12,42 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 public class ApiParamConverterProvider implements ParamConverterProvider {
-  private final StatefulRedisConnection<String, String> redisConnection;
+  private final ApiClient apiClient;
 
-  public ApiParamConverterProvider(StatefulRedisConnection<String, String> redisConnection) {
-    this.redisConnection = redisConnection;
+  public ApiParamConverterProvider(ApiClient apiClient) {
+    this.apiClient = apiClient;
   }
 
   @Override
   public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
     if (rawType == ApiData.class) {
-      return (ParamConverter<T>) new ApiParamConverter(redisConnection);
+      return (ParamConverter<T>) new ApiParamConverter(apiClient);
     }
 
     return null;
   }
 
   private static final class ApiParamConverter implements ParamConverter<ApiData> {
-    private final StatefulRedisConnection<String, String> redisConnection;
+    private final ApiClient apiClient;
 
-    public ApiParamConverter(StatefulRedisConnection<String, String> redisConnection) {
-      this.redisConnection = redisConnection;
+    public ApiParamConverter(ApiClient apiClient) {
+      this.apiClient = apiClient;
     }
 
     @Override
-    public ApiData fromString(String value) {
+    public ApiData fromString(String datasetId) {
       try {
-        ApiClient apiClient = new ApiClient(redisConnection, value);
-        if (!apiClient.hasApi()) {
+        ApiClient apiClient = this.apiClient;
+        if (!apiClient.hasApi(datasetId)) {
           Response response = Response
               .status(Response.Status.NOT_FOUND)
-              .entity("No API for " + value)
+              .entity("No API for " + datasetId)
               .build();
 
           throw new WebApplicationException(response);
         }
 
-        return apiClient.getApiData();
+        return apiClient.getApiData(datasetId);
       } catch (JsonProcessingException e) {
         throw new IllegalArgumentException(e);
       }
