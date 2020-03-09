@@ -15,6 +15,7 @@ import nl.knaw.huc.resussun.healthchecks.ElasticsearchHealthCheck;
 import nl.knaw.huc.resussun.healthchecks.RedisHealthCheck;
 import nl.knaw.huc.resussun.resources.ApiParamConverterProvider;
 import nl.knaw.huc.resussun.resources.ApiResource;
+import nl.knaw.huc.resussun.resources.IndexResource;
 import nl.knaw.huc.resussun.search.SearchClient;
 import nl.knaw.huc.resussun.tasks.CreateIndexTask;
 import nl.knaw.huc.resussun.tasks.DeleteIndexTask;
@@ -65,7 +66,7 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
     environment.jersey().register(new ApiParamConverterProvider(apiClient));
     final UrlHelperFactory urlHelperFactory = config.getUrlHelperFactory();
     environment.jersey().register(new ApiResource(searchClient, urlHelperFactory));
-    
+    environment.jersey().register(new IndexResource(apiClient, urlHelperFactory));
     environment.jersey().register(new JsonWithPaddingInterceptor());
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,
         LoggingFeature.Verbosity.PAYLOAD_ANY, LoggingFeature.DEFAULT_MAX_ENTITY_SIZE));

@@ -4,8 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.api.StatefulRedisConnection;
 
+import java.util.Optional;
+import java.util.stream.Stream;
+
 public class ApiClient {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  public static final String PREFIX = "resussun:";
 
   private final StatefulRedisConnection<String, String> redisConnection;
 
@@ -32,6 +36,10 @@ public class ApiClient {
   }
 
   private String createApiKey(String datasetId) {
-    return "resussun:" + datasetId;
+    return PREFIX + datasetId;
+  }
+
+  public Stream<String> getAllApiKeys() {
+    return redisConnection.sync().keys(createApiKey("*")).stream().map(api -> api.substring(api.indexOf(":") + 1));
   }
 }
