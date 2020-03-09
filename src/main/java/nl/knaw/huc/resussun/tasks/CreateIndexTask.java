@@ -47,9 +47,8 @@ public class CreateIndexTask extends Task {
     }
 
     String dataSetId = params.get(DATA_SET_ID).get(0);
-    ApiClient apiClient = this.apiClient;
 
-    if (apiClient.hasApi(dataSetId)) {
+    if (this.apiClient.hasApi(dataSetId)) {
       out.println("There is already an index for the dataset with id " + dataSetId);
       return;
     }
@@ -57,7 +56,7 @@ public class CreateIndexTask extends Task {
     String timbuctooUrl = params.get(TIMBUCTOO_URL).get(0);
     Timbuctoo timbuctoo = new Timbuctoo(timbuctooUrl);
 
-    createApi(apiClient, dataSetId, timbuctooUrl);
+    createApi(this.apiClient, dataSetId, timbuctooUrl);
     createIndex(dataSetId);
 
     Map<String, List<CollectionMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);

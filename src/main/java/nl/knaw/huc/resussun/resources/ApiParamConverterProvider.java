@@ -37,8 +37,7 @@ public class ApiParamConverterProvider implements ParamConverterProvider {
     @Override
     public ApiData fromString(String datasetId) {
       try {
-        ApiClient apiClient = this.apiClient;
-        if (!apiClient.hasApi(datasetId)) {
+        if (!this.apiClient.hasApi(datasetId)) {
           Response response = Response
               .status(Response.Status.NOT_FOUND)
               .entity("No API for " + datasetId)
@@ -47,7 +46,7 @@ public class ApiParamConverterProvider implements ParamConverterProvider {
           throw new WebApplicationException(response);
         }
 
-        return apiClient.getApiData(datasetId);
+        return this.apiClient.getApiData(datasetId);
       } catch (JsonProcessingException e) {
         throw new IllegalArgumentException(e);
       }
