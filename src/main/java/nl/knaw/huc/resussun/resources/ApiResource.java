@@ -77,8 +77,9 @@ public class ApiResource {
     final String previewUrl = urlHelperFactory.urlHelper(api.getDataSourceId()).path("preview")
                                               .queryParamTemplate("id", "{{id}}").template();
 
-    return new ServiceManifest("Timbuctoo OpenRefine Recon API",
-        "http://example.org/idetifierspace", "http://example.org/schemaspace")
-        .preview(new Preview(previewUrl, 200, 300));
+    return new ServiceManifest(
+        String.format("Dataset \"%s\" of \"%s\" OpenRefine Recon API", api.getDataSourceId(), api.getTimbuctooUrl()),
+        "http://example.org/idetifierspace", "http://example.org/schemaspace"
+    ).preview(new Preview(previewUrl, 200, 300));
   }
 }

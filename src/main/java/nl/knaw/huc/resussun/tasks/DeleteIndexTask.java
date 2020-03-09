@@ -15,13 +15,12 @@ public class DeleteIndexTask extends Task {
   private static final String DATA_SET_ID = "dataSetId";
 
   private final RestHighLevelClient elasticSearchClient;
-  private final StatefulRedisConnection<String, String> redisConnection;
+  private final ApiClient apiClient;
 
-  public DeleteIndexTask(RestHighLevelClient elasticSearchClient,
-                         StatefulRedisConnection<String, String> redisConnection) {
+  public DeleteIndexTask(RestHighLevelClient elasticSearchClient, ApiClient apiClient) {
     super("deleteIndex");
     this.elasticSearchClient = elasticSearchClient;
-    this.redisConnection = redisConnection;
+    this.apiClient = apiClient;
   }
 
   @Override
@@ -32,14 +31,13 @@ public class DeleteIndexTask extends Task {
     }
 
     String dataSetId = params.get(DATA_SET_ID).get(0);
-    ApiClient apiClient = new ApiClient(redisConnection, dataSetId);
 
-    if (!apiClient.hasApi()) {
+    if (!apiClient.hasApi(dataSetId)) {
       out.println("There is no index for the dataset with id " + dataSetId);
       return;
     }
 
-    apiClient.deleteApiData();
+    apiClient.deleteApiData(dataSetId);
     elasticSearchClient.indices().delete(new DeleteIndexRequest(dataSetId), RequestOptions.DEFAULT);
   }
 }

@@ -2,7 +2,6 @@ package nl.knaw.huc.resussun.tasks;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.dropwizard.servlets.tasks.Task;
-import io.lettuce.core.api.StatefulRedisConnection;
 import nl.knaw.huc.resussun.api.ApiClient;
 import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
@@ -32,13 +31,12 @@ public class CreateIndexTask extends Task {
   private static final List<String> PARAMS = List.of(DATA_SET_ID, TIMBUCTOO_URL);
 
   private final RestHighLevelClient elasticSearchClient;
-  private final StatefulRedisConnection<String, String> redisConnection;
+  private final ApiClient apiClient;
 
-  public CreateIndexTask(RestHighLevelClient elasticSearchClient,
-                         StatefulRedisConnection<String, String> redisConnection) {
+  public CreateIndexTask(RestHighLevelClient elasticSearchClient, ApiClient apiClient) {
     super("createIndex");
     this.elasticSearchClient = elasticSearchClient;
-    this.redisConnection = redisConnection;
+    this.apiClient = apiClient;
   }
 
   @Override
@@ -49,9 +47,8 @@ public class CreateIndexTask extends Task {
     }
 
     String dataSetId = params.get(DATA_SET_ID).get(0);
-    ApiClient apiClient = new ApiClient(redisConnection, dataSetId);
 
-    if (apiClient.hasApi()) {
+    if (this.apiClient.hasApi(dataSetId)) {
       out.println("There is already an index for the dataset with id " + dataSetId);
       return;
     }
@@ -59,7 +56,7 @@ public class CreateIndexTask extends Task {
     String timbuctooUrl = params.get(TIMBUCTOO_URL).get(0);
     Timbuctoo timbuctoo = new Timbuctoo(timbuctooUrl);
 
-    createApi(apiClient, dataSetId, timbuctooUrl);
+    createApi(this.apiClient, dataSetId, timbuctooUrl);
     createIndex(dataSetId);
 
     Map<String, List<CollectionMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
@@ -71,7 +68,7 @@ public class CreateIndexTask extends Task {
 
   private void createApi(ApiClient apiClient, String datasetId, String timbuctooUrl) throws JsonProcessingException {
     ApiData apiData = new ApiData(datasetId, timbuctooUrl);
-    apiClient.setApiData(apiData);
+    apiClient.setApiData(apiData, datasetId);
   }
 
   private void createIndex(String indexName) throws IOException {

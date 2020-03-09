@@ -4,32 +4,40 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.api.StatefulRedisConnection;
 
+import java.util.stream.Stream;
+
 public class ApiClient {
+  private static final String PREFIX = "resussun:";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
   private final StatefulRedisConnection<String, String> redisConnection;
-  private final String key;
 
-  public ApiClient(StatefulRedisConnection<String, String> redisConnection, String datasetId) {
+  public ApiClient(StatefulRedisConnection<String, String> redisConnection) {
     this.redisConnection = redisConnection;
-    this.key = "resussun:" + datasetId;
   }
 
-  public boolean hasApi() {
-    return redisConnection.sync().exists(key) == 1;
+  public boolean hasApi(String datasetId) {
+    return redisConnection.sync().exists(createApiKey(datasetId)) == 1;
   }
 
-  public ApiData getApiData() throws JsonProcessingException {
-    String value = redisConnection.sync().get(key);
+  public ApiData getApiData(String datasetId) throws JsonProcessingException {
+    String value = redisConnection.sync().get(createApiKey(datasetId));
     return (value != null) ? OBJECT_MAPPER.readValue(value, ApiData.class) : null;
   }
 
-  public void setApiData(final ApiData apiData) throws JsonProcessingException {
+  public void setApiData(final ApiData apiData, String datasetId) throws JsonProcessingException {
     String value = OBJECT_MAPPER.writeValueAsString(apiData);
-    redisConnection.sync().set(key, value);
+    redisConnection.sync().set(createApiKey(datasetId), value);
   }
 
-  public void deleteApiData() {
-    redisConnection.sync().del(key);
+  public void deleteApiData(String datasetId) {
+    redisConnection.sync().del(createApiKey(datasetId));
+  }
+
+  private String createApiKey(String datasetId) {
+    return PREFIX + datasetId;
+  }
+
+  public Stream<String> getAllApiKeys() {
+    return redisConnection.sync().keys(createApiKey("*")).stream().map(api -> api.substring(api.indexOf(":") + 1));
   }
 }
