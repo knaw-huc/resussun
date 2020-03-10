@@ -101,7 +101,7 @@ public class CreateIndexTask extends Task {
 
   private void queryData(Timbuctoo timbuctoo, String dataSetId, String collectionId, List<String> props, String cursor)
       throws TimbuctooException, IOException {
-    TimbuctooRequest request = TimbuctooRequest.createQueryRequest(dataSetId, collectionId, props, cursor);
+    TimbuctooRequest request = QueryResponseMapper.createQueryRequest(dataSetId, collectionId, props, cursor);
     QueryResponse queryResponse = timbuctoo.executeRequest(request, new QueryResponseMapper());
 
     processData(dataSetId, collectionId, queryResponse.getItems());
@@ -135,7 +135,7 @@ public class CreateIndexTask extends Task {
 
   private static Map<String, List<PropertyMetadata>> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)
       throws TimbuctooException {
-    TimbuctooRequest request = TimbuctooRequest.createCollectionsMetadataRequest(dataSetId);
+    TimbuctooRequest request = CollectionsMetadataMapper.createCollectionsMetadataRequest(dataSetId);
     return timbuctoo.executeRequest(request, new CollectionsMetadataMapper());
   }
 

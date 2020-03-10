@@ -2,6 +2,7 @@ package nl.knaw.huc.resussun.timbuctoo;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,28 @@ public class QueryResponseMapper implements TimbuctooResponseMapper<QueryRespons
     });
 
     return new QueryResponseItem(uri, title, types, values);
+  }
+
+  public static TimbuctooRequest createQueryRequest(String datasetId,
+                                                    String collectionId,
+                                                    List<String> properties,
+                                                    String cursor
+  ) {
+    return new TimbuctooRequest(String.format("query data($cursor: ID) {\n" +
+        "  dataSets {\n" +
+        "    %s {\n" +
+        "      %sList(cursor: $cursor count: 1000) {\n" +
+        "        nextCursor\n" +
+        "        items {\n" +
+        "          uri\n" +
+        "          title { value }\n" +
+        "          %s\n" +
+        "        }\n" +
+        "      }\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", datasetId, collectionId, String.join("\n", properties)),
+        cursor != null ? Map.of("cursor", cursor) : Collections.emptyMap());
   }
 
   @Override

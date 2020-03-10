@@ -45,7 +45,7 @@ public class PreviewResource {
   public Response get(@QueryParam("id") String id) {
     try {
       List<String> collectionIds = searchClient.getCollectionIdsForId(apiData.getDataSourceId(), id);
-      TimbuctooRequest request = TimbuctooRequest.createEntityRequest(
+      TimbuctooRequest request = EntityResponseMapper.createEntityRequest(
           apiData.getDataSourceId(), collectionIds.get(0), id, Collections.emptyList());
 
       Timbuctoo timbuctoo = apiData.getTimbuctoo();

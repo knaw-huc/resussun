@@ -9,6 +9,25 @@ import java.util.Map;
 import static nl.knaw.huc.resussun.timbuctoo.Utils.getValues;
 
 public class EntityResponseMapper implements TimbuctooResponseMapper<EntityResponse> {
+  public static TimbuctooRequest createEntityRequest(String datasetId,
+                                                    String collectionId,
+                                                    String uri,
+                                                    List<String> properties) {
+    return new TimbuctooRequest(String.format("query data($uri: String!) {\n" +
+        "  dataSets {\n" +
+        "    %s {\n" +
+        "      %s(uri: $uri) {\n" +
+        "        uri\n" +
+        "        title { value }\n" +
+        "        description { value }\n" +
+        "        image { value }\n" +
+        "        %s\n" +
+        "      }\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", datasetId, collectionId, String.join("\n", properties)), Map.of("uri", uri));
+  }
+
   @Override
   public EntityResponse mapResponse(JsonNode json) {
     json = json.get("data").get("dataSets");

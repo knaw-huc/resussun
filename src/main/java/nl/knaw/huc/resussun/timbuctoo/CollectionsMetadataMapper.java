@@ -24,6 +24,25 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
     }
   }
 
+  public static TimbuctooRequest createCollectionsMetadataRequest(String datasetId) {
+    return new TimbuctooRequest("query dataSetMetaData($dataSet:ID!) {\n" +
+        "  dataSetMetadata(dataSetId: $dataSet) {\n" +
+        "    collectionList {\n" +
+        "      items {\n" +
+        "        collectionId\n" +
+        "        properties {\n" +
+        "          items {\n" +
+        "            name\n" +
+        "            isList\n" +
+        "            isValueType\n" +
+        "          }\n" +
+        "        }\n" +
+        "      }\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", Map.of("dataSet", datasetId));
+  }
+
   @Override
   public Map<String, List<PropertyMetadata>> mapResponse(JsonNode json) {
     Iterable<JsonNode> collections = () -> json.get("data")
