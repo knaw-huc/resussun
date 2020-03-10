@@ -14,6 +14,7 @@ import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 public class Timbuctoo {
   private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
   private final String url;
+  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   public Timbuctoo(String url) {
     this.url = url;
@@ -22,11 +23,10 @@ public class Timbuctoo {
   public <T> T executeRequest(TimbuctooRequest timbuctooRequest, TimbuctooResponseMapper<T> responseMapper)
       throws TimbuctooException {
     try {
-      ObjectMapper mapper = new ObjectMapper();
       HttpRequest request = HttpRequest.newBuilder()
                                        .uri(URI.create(url + "/v5/graphql"))
                                        .header("Content-Type", "application/json")
-                                       .POST(ofByteArray(mapper.writeValueAsBytes(timbuctooRequest)))
+                                       .POST(ofByteArray(OBJECT_MAPPER.writeValueAsBytes(timbuctooRequest)))
                                        .build();
 
       HttpResponse<byte[]> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
@@ -34,7 +34,7 @@ public class Timbuctoo {
         throw new TimbuctooException("Request to Timbuctoo did not yield a successful status code");
       }
 
-      JsonNode json = mapper.readTree(response.body());
+      JsonNode json = OBJECT_MAPPER.readTree(response.body());
       if (json.has("errors") && json.get("errors").isArray()) {
         throw new TimbuctooException(
             "Timbuctoo responded with error: " +
