@@ -18,6 +18,7 @@ services:
     image: knawhuc/resussun:latest
     environment:
       ELASTICSEARCH_HOST: "elasticsearch"
+      REDIS_HOST: "redis"
     ports:
       - "8080:80"
       - "8081:81"
