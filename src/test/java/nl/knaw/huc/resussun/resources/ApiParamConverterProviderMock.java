@@ -17,7 +17,7 @@ public class ApiParamConverterProviderMock implements ParamConverterProvider {
       return new ParamConverter<T>() {
         @Override
         public T fromString(String value) {
-          return (T) API_DATA;
+          return (T) (API_DATA.getDataSourceId().equals(value) ? API_DATA : null);
         }
 
         @Override

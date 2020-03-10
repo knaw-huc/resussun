@@ -33,7 +33,7 @@ import static org.mockito.Mockito.mock;
 
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class ApiResourceTest {
-  private static final String ROOT_PATH = "/" + ApiParamConverterProviderMock.API_DATA;
+  private static final String ROOT_PATH = "/" + ApiParamConverterProviderMock.API_DATA.getDataSourceId();
   private static final SearchClient SEARCH_CLIENT = mock(SearchClient.class);
   private static final UrlHelperFactory URL_HELPER_FACTORY = new UrlHelperFactory("http://www.example.org");
   private static final ResourceExtension RESOURCES = ResourceExtension
