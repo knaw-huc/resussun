@@ -79,7 +79,7 @@ public class ApiResource {
 
     return new ServiceManifest(
         String.format("Dataset \"%s\" of \"%s\" OpenRefine Recon API", api.getDataSourceId(), api.getTimbuctooUrl()),
-        "http://example.org/idetifierspace", "http://example.org/schemaspace"
+        "http://example.org/identifierspace", "http://example.org/schemaspace"
     ).preview(new Preview(previewUrl, 200, 300));
   }
 }
