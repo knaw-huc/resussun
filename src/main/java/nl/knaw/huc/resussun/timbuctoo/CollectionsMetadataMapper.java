@@ -13,6 +13,11 @@ import java.util.stream.StreamSupport;
 
 public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<String, List<PropertyMetadata>>> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private final String key;
+
+  private CollectionsMetadataMapper(String key) {
+    this.key = key;
+  }
 
   private static List<PropertyMetadata> mapListOfMetadata(JsonNode collection) {
     try {
@@ -24,6 +29,9 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
     }
   }
 
+  public static CollectionsMetadataMapper collectionIdAsKey() {
+    return new CollectionsMetadataMapper("collectionId");
+  }
   public static TimbuctooRequest createCollectionsMetadataRequest(String datasetId) {
     return new TimbuctooRequest("query dataSetMetaData($dataSet:ID!) {\n" +
         "  dataSetMetadata(dataSetId: $dataSet) {\n" +
@@ -52,10 +60,11 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
                                                .iterator();
 
     return StreamSupport.stream(collections.spliterator(), false)
+                        // FIXME make sure we do not exclude valid collections with Provenance and unknown in the id.
                         .filter(col -> !col.get("collectionId").asText().contains("unknown"))
                         .filter(col -> !col.get("collectionId").asText().contains("Provenance"))
                         .collect(Collectors.toMap(
-                            col -> col.get("collectionId").asText(),
+                            col -> col.get(key).asText(),
                             CollectionsMetadataMapper::mapListOfMetadata
                         ));
   }

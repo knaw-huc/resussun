@@ -136,7 +136,8 @@ public class CreateIndexTask extends Task {
   private static Map<String, List<PropertyMetadata>> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)
       throws TimbuctooException {
     TimbuctooRequest request = CollectionsMetadataMapper.createCollectionsMetadataRequest(dataSetId);
-    return timbuctoo.executeRequest(request, new CollectionsMetadataMapper());
+
+    return timbuctoo.executeRequest(request, CollectionsMetadataMapper.collectionIdAsKey());
   }
 
   private static List<String> getPropsFromMetadata(List<PropertyMetadata> propertyMetadata) {
