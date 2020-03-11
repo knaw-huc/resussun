@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.dropwizard.servlets.tasks.Task;
 import nl.knaw.huc.resussun.api.ApiClient;
 import nl.knaw.huc.resussun.api.ApiData;
+import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
 import nl.knaw.huc.resussun.timbuctoo.PropertyMetadata;
 import nl.knaw.huc.resussun.timbuctoo.CollectionsMetadataMapper;
 import nl.knaw.huc.resussun.timbuctoo.QueryResponse;
@@ -62,9 +63,9 @@ public class CreateIndexTask extends Task {
 
     createIndex(dataSetId);
 
-    Map<String, List<PropertyMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
-    for (Map.Entry<String, List<PropertyMetadata>> collectionMetadata : collectionsMetadata.entrySet()) {
-      List<String> props = getPropsFromMetadata(collectionMetadata.getValue());
+    Map<String, CollectionMetadata> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
+    for (Map.Entry<String, CollectionMetadata> collectionMetadata : collectionsMetadata.entrySet()) {
+      List<String> props = getPropsFromMetadata(collectionMetadata.getValue().getProperties());
       queryData(timbuctoo, dataSetId, collectionMetadata.getKey(), props, null);
     }
   }
@@ -133,7 +134,7 @@ public class CreateIndexTask extends Task {
     elasticSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
   }
 
-  private static Map<String, List<PropertyMetadata>> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)
+  private static Map<String, CollectionMetadata> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)
       throws TimbuctooException {
     TimbuctooRequest request = CollectionsMetadataMapper.createCollectionsMetadataRequest(dataSetId);
 
