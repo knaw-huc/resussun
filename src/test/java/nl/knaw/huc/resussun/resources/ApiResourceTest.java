@@ -11,7 +11,9 @@ import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
 import nl.knaw.huc.resussun.model.Candidate;
 import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.search.SearchClient;
+import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -38,10 +40,15 @@ public class ApiResourceTest {
   private static final UrlHelperFactory URL_HELPER_FACTORY = new UrlHelperFactory("http://www.example.org");
   private static final ResourceExtension RESOURCES = ResourceExtension
       .builder()
-      .addResource(new ApiResource(SEARCH_CLIENT, URL_HELPER_FACTORY))
+      .addResource(new ApiResource(SEARCH_CLIENT, URL_HELPER_FACTORY, (url) -> mock(Timbuctoo.class)))
       .addResource(new JsonWithPaddingInterceptor())
       .addResource(new ApiParamConverterProviderMock())
       .build();
+
+  @AfterEach
+  public void tearDown() {
+    Mockito.reset(SEARCH_CLIENT);
+  }
 
   @Test
   public void serviceManifestIsValid() throws Exception {

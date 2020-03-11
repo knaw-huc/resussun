@@ -41,6 +41,10 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
     return new CollectionsMetadataMapper(COLLECTION_ID_PROP);
   }
 
+  public static CollectionsMetadataMapper uriAsKey() {
+    return new CollectionsMetadataMapper("uri");
+  }
+
   public static TimbuctooRequest createCollectionsMetadataRequest(String datasetId) {
     return new TimbuctooRequest("query dataSetMetaData($dataSet:ID!) {\n" +
         "  dataSetMetadata(dataSetId: $dataSet) {\n" +
@@ -48,8 +52,10 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
         "      items {\n" +
         "        collectionId\n" +
         "        collectionListId\n" +
+        "        uri\n" +
         "        properties {\n" +
         "          items {\n" +
+        "            uri\n" +
         "            name\n" +
         "            isList\n" +
         "            isValueType\n" +

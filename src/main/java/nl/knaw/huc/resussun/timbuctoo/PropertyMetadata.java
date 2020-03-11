@@ -6,15 +6,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public class PropertyMetadata {
+  private final String uri;
   private final String name;
   private final boolean isList;
   private final boolean isValueType;
 
   @JsonCreator
-  public PropertyMetadata(@JsonProperty("name") String name,
+  public PropertyMetadata(@JsonProperty("uri") String uri,
+                          @JsonProperty("name") String name,
                           @JsonProperty("isList") boolean isList,
                           @JsonProperty("isValueType") boolean isValueType
   ) {
+    this.uri = uri;
     this.name = name;
     this.isList = isList;
     this.isValueType = isValueType;
@@ -49,5 +52,9 @@ public class PropertyMetadata {
   @Override
   public int hashCode() {
     return Objects.hash(name, isList, isValueType);
+  }
+
+  public String getUri() {
+    return uri;
   }
 }

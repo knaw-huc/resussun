@@ -19,6 +19,7 @@ import nl.knaw.huc.resussun.resources.IndexResource;
 import nl.knaw.huc.resussun.search.SearchClient;
 import nl.knaw.huc.resussun.tasks.CreateIndexTask;
 import nl.knaw.huc.resussun.tasks.DeleteIndexTask;
+import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -65,7 +66,7 @@ public class ResussunApplication extends Application<ResussunConfiguration> {
     final ApiClient apiClient = new ApiClient(redisConnection);
     environment.jersey().register(new ApiParamConverterProvider(apiClient));
     final UrlHelperFactory urlHelperFactory = config.getUrlHelperFactory();
-    environment.jersey().register(new ApiResource(searchClient, urlHelperFactory));
+    environment.jersey().register(new ApiResource(searchClient, urlHelperFactory, Timbuctoo::new));
     environment.jersey().register(new IndexResource(apiClient, urlHelperFactory));
     environment.jersey().register(new JsonWithPaddingInterceptor());
     environment.jersey().register(new LoggingFeature(Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME), Level.INFO,
