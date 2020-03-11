@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public class UrlHelperFactory {
   private final String publicUrl;
@@ -33,7 +36,7 @@ public class UrlHelperFactory {
     }
 
     public UrlHelper path(String path) {
-      uriBuilder.path(path);
+      uriBuilder.path(URLEncoder.encode(path, StandardCharsets.UTF_8));
       return this;
     }
 
@@ -44,6 +47,10 @@ public class UrlHelperFactory {
 
     public String template() {
       return uriBuilder.toTemplate();
+    }
+
+    public URI toUri() {
+      return uriBuilder.build();
     }
   }
 }

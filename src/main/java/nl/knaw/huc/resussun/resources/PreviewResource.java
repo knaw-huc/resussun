@@ -1,7 +1,13 @@
 package nl.knaw.huc.resussun.resources;
 
+import io.dropwizard.util.Resources;
 import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.search.SearchClient;
+import nl.knaw.huc.resussun.timbuctoo.EntityResponse;
+import nl.knaw.huc.resussun.timbuctoo.EntityResponseMapper;
+import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
+import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
+import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
@@ -9,10 +15,25 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
 public class PreviewResource {
+  private static final String HTML_TEMPLATE;
+
   private final SearchClient searchClient;
   private final ApiData apiData;
+
+  static {
+    try {
+      URL url = Resources.getResource("preview.html");
+      HTML_TEMPLATE = Resources.toString(url, StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   public PreviewResource(SearchClient searchClient, ApiData apiData) {
     this.searchClient = searchClient;
@@ -23,25 +44,24 @@ public class PreviewResource {
   @Produces(MediaType.TEXT_HTML)
   public Response get(@QueryParam("id") String id) {
     try {
-      final String title = searchClient.getTitleById(apiData.getDataSourceId(), id);
+      List<String> collectionIds = searchClient.getCollectionIdsForId(apiData.getDataSourceId(), id);
+      TimbuctooRequest request = TimbuctooRequest.createEntityRequest(
+          apiData.getDataSourceId(), collectionIds.get(0), id, Collections.emptyList());
 
-      if (title != null) {
-        return Response.ok(createPage(title)).build();
-      } else {
-        return Response.status(Response.Status.NOT_FOUND).build();
-      }
-    } catch (IOException e) {
-      return Response.serverError().build();
+      Timbuctoo timbuctoo = apiData.getTimbuctoo();
+      EntityResponse entity = timbuctoo.executeRequest(request, new EntityResponseMapper());
+
+      String imageHtml = (entity.getImage() != null) ? "<img src=\"" + entity.getImage() + "\"/>" : "";
+      String description = (entity.getDescription() != null) ? entity.getDescription() : "";
+
+      String html = HTML_TEMPLATE
+          .replace("{{title}}", entity.getTitle())
+          .replace("{{image}}", imageHtml)
+          .replace("{{description}}", description);
+
+      return Response.ok(html).build();
+    } catch (IOException | TimbuctooException e) {
+      return Response.status(Response.Status.NOT_FOUND).build();
     }
-  }
-
-  public String createPage(String titleById) {
-    return "<html><head><meta charset=\"utf-8\" /></head>\n" +
-        "<body style=\"margin: 0px; font-family: Arial; sans-serif\">\n" +
-        "<div style=\"height: 300px; width: 200px; overflow: hidden; font-size: 0.7em\">\n" +
-        "<p>" + titleById + "</p>" +
-        "</div>\n" +
-        "</body>\n" +
-        "</html>";
   }
 }

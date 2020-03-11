@@ -13,11 +13,12 @@ import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.script.Script;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,7 +29,8 @@ import java.util.stream.Collectors;
 public class CreateIndexTask extends Task {
   private static final String DATA_SET_ID = "dataSetId";
   private static final String TIMBUCTOO_URL = "timbuctooUrl";
-  private static final List<String> PARAMS = List.of(DATA_SET_ID, TIMBUCTOO_URL);
+  private static final String TIMBUCTOO_GUI_URL = "timbuctooGuiUrl";
+  private static final List<String> PARAMS = List.of(DATA_SET_ID, TIMBUCTOO_URL, TIMBUCTOO_GUI_URL);
 
   private final RestHighLevelClient elasticSearchClient;
   private final ApiClient apiClient;
@@ -42,7 +44,7 @@ public class CreateIndexTask extends Task {
   @Override
   public void execute(Map<String, List<String>> params, PrintWriter out) throws Exception {
     if (!params.keySet().containsAll(PARAMS)) {
-      out.println("Expected parameters: " + TIMBUCTOO_URL + " and " + DATA_SET_ID);
+      out.println("Expected parameters: " + DATA_SET_ID + " and " + TIMBUCTOO_URL + " and " + TIMBUCTOO_GUI_URL);
       return;
     }
 
@@ -54,9 +56,10 @@ public class CreateIndexTask extends Task {
     }
 
     String timbuctooUrl = params.get(TIMBUCTOO_URL).get(0);
-    Timbuctoo timbuctoo = new Timbuctoo(timbuctooUrl);
+    String timbuctooGuiUrl = params.get(TIMBUCTOO_GUI_URL).get(0);
+    ApiData apiData = createApi(this.apiClient, dataSetId, timbuctooUrl, timbuctooGuiUrl);
+    Timbuctoo timbuctoo = apiData.getTimbuctoo();
 
-    createApi(this.apiClient, dataSetId, timbuctooUrl);
     createIndex(dataSetId);
 
     Map<String, List<CollectionMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
@@ -66,9 +69,11 @@ public class CreateIndexTask extends Task {
     }
   }
 
-  private void createApi(ApiClient apiClient, String datasetId, String timbuctooUrl) throws JsonProcessingException {
-    ApiData apiData = new ApiData(datasetId, timbuctooUrl);
+  private ApiData createApi(ApiClient apiClient, String datasetId, String timbuctooUrl,
+                            String timbuctooGuiUrl) throws JsonProcessingException {
+    ApiData apiData = new ApiData(datasetId, timbuctooUrl, timbuctooGuiUrl);
     apiClient.setApiData(apiData, datasetId);
+    return apiData;
   }
 
   private void createIndex(String indexName) throws IOException {
@@ -79,6 +84,9 @@ public class CreateIndexTask extends Task {
             "      \"type\": \"keyword\"\n" +
             "    },\n" +
             "    \"types\": {\n" +
+            "      \"type\": \"keyword\"\n" +
+            "    },\n" +
+            "    \"collectionIds\": {\n" +
             "      \"type\": \"keyword\"\n" +
             "    },\n" +
             "    \"title\": {\n" +
@@ -96,28 +104,31 @@ public class CreateIndexTask extends Task {
     TimbuctooRequest request = TimbuctooRequest.createQueryRequest(dataSetId, collectionId, props, cursor);
     QueryResponse queryResponse = timbuctoo.executeRequest(request, new QueryResponseMapper());
 
-    processData(dataSetId, queryResponse.getItems());
+    processData(dataSetId, collectionId, queryResponse.getItems());
 
     if (queryResponse.getNextCursor() != null) {
       queryData(timbuctoo, dataSetId, collectionId, props, queryResponse.getNextCursor());
     }
   }
 
-  private void processData(String indexName, List<QueryResponseItem> data) throws IOException {
+  private void processData(String indexName, String collectionId, List<QueryResponseItem> data) throws IOException {
     BulkRequest bulkRequest = new BulkRequest();
     data.iterator().forEachRemaining(entity -> {
-      IndexRequest indexRequest = new IndexRequest(indexName)
+      UpdateRequest updateRequest = new UpdateRequest()
+          .index(indexName)
           .id(entity.getUri())
-          .source(
+          .script(new Script("ctx._source.collectionIds.add('" + collectionId + "')"))
+          .upsert(
               "uri", entity.getUri(),
               "types", entity.getTypes(),
+              "collectionIds", List.of(collectionId),
               "title", entity.getTitle(),
               "values", entity.getValues().values().stream()
                               .flatMap(List::stream)
                               .collect(Collectors.joining(" "))
           );
 
-      bulkRequest.add(indexRequest);
+      bulkRequest.add(updateRequest);
     });
     elasticSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
   }
