@@ -8,7 +8,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 public class ApiParamConverterProviderMock implements ParamConverterProvider {
-  public static final ApiData API_DATA = new ApiData("test", "http://timbuctoo");
+  public static final ApiData API_DATA = new ApiData("test",
+      "http://timbuctoo", "http://timbuctoo-gui");
 
   @Override
   public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {

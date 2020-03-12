@@ -32,6 +32,14 @@ public class SearchClient {
     this.elasticsearchClient = elasticsearchClient;
   }
 
+  public List<String> getCollectionIdsForId(String indexName, String id) throws IOException {
+    final GetRequest getRequest = new GetRequest(indexName, id);
+    final GetResponse getResponse = elasticsearchClient.get(getRequest, RequestOptions.DEFAULT);
+
+    // Collection ids are mapped to a list of strings in ElasticSearch, so we can safely cast the object to a list
+    return (List<String>) getResponse.getSource().get("collectionIds");
+  }
+
   public Map<String, Candidates> search(String indexName, Map<String, Query> queries) throws IOException {
     // Transform the queries map to a list to keep the order of the queries and their identifiers consistent
     final List<Map.Entry<String, Query>> queriesList = new ArrayList<>(queries.entrySet());

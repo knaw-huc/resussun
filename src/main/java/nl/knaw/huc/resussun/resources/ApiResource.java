@@ -50,6 +50,11 @@ public class ApiResource {
     return handleRequest(api, queries);
   }
 
+  @Path("/view")
+  public ViewResource view(@PathParam("api") ApiData api) {
+    return new ViewResource(searchClient, api);
+  }
+
   @Path("/preview")
   public PreviewResource preview(@PathParam("api") ApiData api) {
     return new PreviewResource(searchClient, api);
@@ -74,12 +79,15 @@ public class ApiResource {
   }
 
   private ServiceManifest createServiceManifest(ApiData api) {
+    final String viewUrl = urlHelperFactory.urlHelper(api.getDataSourceId()).path("view")
+                                           .queryParamTemplate("id", "{{id}}").template();
     final String previewUrl = urlHelperFactory.urlHelper(api.getDataSourceId()).path("preview")
                                               .queryParamTemplate("id", "{{id}}").template();
 
     return new ServiceManifest(
         String.format("Dataset \"%s\" of \"%s\" OpenRefine Recon API", api.getDataSourceId(), api.getTimbuctooUrl()),
-        "http://example.org/identifierspace", "http://example.org/schemaspace"
-    ).preview(new Preview(previewUrl, 200, 300));
+        "http://example.org/identifierspace", "http://example.org/schemaspace")
+        .viewUrl(viewUrl)
+        .preview(new Preview(previewUrl, 400, 200));
   }
 }

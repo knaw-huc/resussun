@@ -39,8 +39,7 @@ public class TimbuctooRequest {
   public static TimbuctooRequest createQueryRequest(String datasetId,
                                                     String collectionId,
                                                     List<String> properties,
-                                                    String cursor
-  ) {
+                                                    String cursor) {
     return new TimbuctooRequest(String.format("query data($cursor: ID) {\n" +
         "  dataSets {\n" +
         "    %s {\n" +
@@ -56,5 +55,24 @@ public class TimbuctooRequest {
         "  }\n" +
         "}", datasetId, collectionId, String.join("\n", properties)),
         cursor != null ? Map.of("cursor", cursor) : Collections.emptyMap());
+  }
+
+  public static TimbuctooRequest createEntityRequest(String datasetId,
+                                                    String collectionId,
+                                                    String uri,
+                                                    List<String> properties) {
+    return new TimbuctooRequest(String.format("query data($uri: String!) {\n" +
+        "  dataSets {\n" +
+        "    %s {\n" +
+        "      %s(uri: $uri) {\n" +
+        "        uri\n" +
+        "        title { value }\n" +
+        "        description { value }\n" +
+        "        image { value }\n" +
+        "        %s\n" +
+        "      }\n" +
+        "    }\n" +
+        "  }\n" +
+        "}", datasetId, collectionId, String.join("\n", properties)), Map.of("uri", uri));
   }
 }
