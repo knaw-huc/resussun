@@ -2,9 +2,8 @@ package nl.knaw.huc.resussun.timbuctoo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class TimbuctooRequest {
   @JsonProperty
@@ -17,4 +16,11 @@ public class TimbuctooRequest {
     this.variables = variables;
   }
 
+  public String getQuery() {
+    return query;
+  }
+
+  public Map<String, String> getVariables() {
+    return variables;
+  }
 }

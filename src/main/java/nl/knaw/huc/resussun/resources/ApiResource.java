@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
+import nl.knaw.huc.resussun.dataextension.DataExtensionClient;
+import nl.knaw.huc.resussun.dataextension.DataExtensionRequest;
 import nl.knaw.huc.resussun.model.Extend;
 import nl.knaw.huc.resussun.model.ExtendPropertySetting;
 import nl.knaw.huc.resussun.model.Preview;
@@ -12,6 +14,7 @@ import nl.knaw.huc.resussun.model.Query;
 import nl.knaw.huc.resussun.model.ServiceManifest;
 import nl.knaw.huc.resussun.search.SearchClient;
 import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
+import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,25 +39,31 @@ public class ApiResource {
   private final SearchClient searchClient;
   private final UrlHelperFactory urlHelperFactory;
   private final Function<String, Timbuctoo> timbuctooFactory;
+  private final DataExtensionClient dataExtensionClient;
 
   public ApiResource(SearchClient searchClient, UrlHelperFactory urlHelperFactory,
                      Function<String, Timbuctoo> timbuctooFactory) {
     this.searchClient = searchClient;
     this.urlHelperFactory = urlHelperFactory;
     this.timbuctooFactory = timbuctooFactory;
+    dataExtensionClient = new DataExtensionClient(timbuctooFactory);
   }
 
   @GET
   @Produces({"application/json", "application/javascript"})
-  public Response get(@PathParam("api") ApiData api, @QueryParam("queries") String queries) {
-    return handleRequest(api, queries);
+  public Response get(@PathParam("api") ApiData api,
+                      @QueryParam("queries") String queries,
+                      @QueryParam("extend") String extend) {
+    return handleRequest(api, queries, extend);
   }
 
   @POST
   @Consumes("application/x-www-form-urlencoded")
   @Produces({"application/json", "application/javascript"})
-  public Response post(@PathParam("api") ApiData api, @FormParam("queries") String queries) {
-    return handleRequest(api, queries);
+  public Response post(@PathParam("api") ApiData api,
+                       @FormParam("queries") String queries,
+                       @FormParam("extend") String extend) {
+    return handleRequest(api, queries, extend);
   }
 
   @Path("/view")
@@ -75,7 +84,7 @@ public class ApiResource {
     );
   }
 
-  private Response handleRequest(ApiData api, String queriesJson) {
+  private Response handleRequest(ApiData api, String queriesJson, String extend) {
     if (queriesJson != null) {
       try {
         Map<String, Query> queries = OBJECT_MAPPER.readValue(queriesJson, new TypeReference<>() {
@@ -87,6 +96,21 @@ public class ApiResource {
       } catch (IOException e) {
         LOG.error("Could not execute query", e);
         return Response.serverError().build();
+      }
+    } else if (extend != null) {
+      DataExtensionRequest extensionRequest = null;
+      try {
+        extensionRequest = OBJECT_MAPPER.readValue(extend, DataExtensionRequest.class);
+      } catch (JsonProcessingException e) {
+        LOG.info("Could not parse extension request: {}", extend);
+        LOG.info("Exception thrown", e);
+        return Response.status(Response.Status.BAD_REQUEST).build();
+      }
+      try {
+        return Response.ok(dataExtensionClient.createExtensionResponse(api, extensionRequest)).build();
+      } catch (TimbuctooException e) {
+        LOG.error("Retrieving data threw an exception", e);
+        return Response.serverError().entity("Could not retrieve data").build();
       }
     }
 
