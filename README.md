@@ -1,7 +1,7 @@
 # Resussun
 
-Resussun is an implementation of the [Reconciliation Service API](#https://reconciliation-api.github.io/specs/0.1/), 
-providing reconciliation endpoints for datasets from [Timbuctoo](#https://github.com/HuygensING/timbuctoo) instances.
+Resussun is an implementation of the [Reconciliation Service API](https://reconciliation-api.github.io/specs/0.1/), 
+providing reconciliation endpoints for datasets from [Timbuctoo](https://github.com/HuygensING/timbuctoo) instances.
 
 1. [Running the service](#running-the-service)
     1. [Use a local build](#use-a-local-build)
@@ -34,32 +34,32 @@ This docker-compose uses the local build to run with Elasticsearch and Redis.
 
 ## How the service is built up
 
-Resussun is a service written in Java using the [Dropwizard](#https://www.dropwizard.io) framework. 
-It makes use of [ElasticSearch](#https://www.elastic.co/elasticsearch) as the search engine 
-and [Redis](#https://redis.io) for the storage of metadata and to provide caching.
+Resussun is a service written in Java using the [Dropwizard](https://www.dropwizard.io) framework. 
+It makes use of [ElasticSearch](https://www.elastic.co/elasticsearch) as the search engine 
+and [Redis](https://redis.io) for the storage of metadata and to provide caching.
 
 ![](./docs/components.png)
 
 Through the admin interface an administrator can create reconciliation services for any number of configured datasets 
-from various [Timbuctoo](#https://github.com/HuygensING/timbuctoo) instances. 
-Resussun will use the [GraphQL](#https://graphql.org) interface provided by Timbuctoo 
+from various [Timbuctoo](https://github.com/HuygensING/timbuctoo) instances. 
+Resussun will use the [GraphQL](https://graphql.org) interface provided by Timbuctoo 
 to obtain and index the data in ElasticSearch. Various metadata, like the URL of the Timbuctoo
 instance where the data is hosted and the URL of the Timbuctoo GUI, is stored in Redis. 
 
 Resussun will use the metadata stored in Redis to provide a new reconciliation service endpoint 
-and with it a [service manifest](#https://reconciliation-api.github.io/specs/0.1/#service-manifest). 
-All [reconciliation queries](#https://reconciliation-api.github.io/specs/0.1/#sending-reconciliation-queries-to-a-service) 
+and with it a [service manifest](https://reconciliation-api.github.io/specs/0.1/#service-manifest). 
+All [reconciliation queries](https://reconciliation-api.github.io/specs/0.1/#sending-reconciliation-queries-to-a-service) 
 sent to the endpoint are transformed as queries to the ElasticSearch index and those results are then 
-transformed back to [reconciliation candidates](#https://reconciliation-api.github.io/specs/0.1/#reconciliation-candidates).
-Various other requests, for example to the [suggest services](#https://reconciliation-api.github.io/specs/0.1/#suggest-services)
-or to the [data extension service](#https://reconciliation-api.github.io/specs/0.1/#data-extension-service), 
+transformed back to [reconciliation candidates](https://reconciliation-api.github.io/specs/0.1/#reconciliation-candidates).
+Various other requests, for example to the [suggest services](https://reconciliation-api.github.io/specs/0.1/#suggest-services)
+or to the [data extension service](https://reconciliation-api.github.io/specs/0.1/#data-extension-service), 
 are transformed to GraphQL queries to Timbuctoo, before being transformed back to results according to the specification.
 
 ## Mapping and searching
 
 ### How the data is mapped and searched 
 
-In the specification three important [core concepts](#https://reconciliation-api.github.io/specs/0.1/#core-concepts) 
+In the specification three important [core concepts](https://reconciliation-api.github.io/specs/0.1/#core-concepts) 
 are defined: entities, types and properties. In Timbuctoo we also recognize entities within a dataset, 
 as well as properties on those entities. However, each entity in a dataset is placed in a `collection` 
 based on the `rdf_type`. So, the mapping of the core concepts to those from Timbuctoo is:
@@ -101,15 +101,15 @@ as a separate text field for additional search data. This results in the followi
 ```     
 
 In order to search for candidates, the following ElasticSearch query is constructed: 
-a [multi match query](#https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html)
+a [multi match query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html)
 is used to match the given query on both the `title` and the `values` fields. As the `title` is more important, 
 it's score is boosted by 5. We use the `most_fields` type to find entities which match any of the two fields
 and which will combine the scores from both fields. 
 
 If one or more types are passed along with the query, we have to add a filter to the ElasticSearch query. In order
-to do so we use a [boolean query](#https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html).
+to do so we use a [boolean query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html).
 The boolean query will use the multi match query as a `must`. 
-But will use a [term query](#https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-query.html) 
+But will use a [term query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-query.html) 
 for the type(s) as a `filter`.
 
 This results in the following query:
@@ -139,7 +139,7 @@ This results in the following query:
 
 ### An example
 
-As an example, we will be using the [DWC dataset](#https://data.huygens.knaw.nl/details/u74ccc032adf8422d7ea92df96cd4783f0543db3b__dwc) 
+As an example, we will be using the [DWC dataset](https://data.huygens.knaw.nl/details/u74ccc032adf8422d7ea92df96cd4783f0543db3b__dwc) 
 with dataset id `u74ccc032adf8422d7ea92df96cd4783f0543db3b__dwc` 
 from the Huygens ING Timbuctoo instance: `https://repository.huygens.knaw.nl`.
 
@@ -258,11 +258,11 @@ Returns a JSON serialized list of URLs to all provided reconciliation service en
 
 **curl**: `curl -X GET http://localhost:8080/{dataSetId}`
 
-Returns a [service manifest](#https://reconciliation-api.github.io/specs/0.1/#service-manifest) 
+Returns a [service manifest](https://reconciliation-api.github.io/specs/0.1/#service-manifest) 
 for a reconciliation service with the given `dataSetId`.
 
 Consult this manifest for the various other endpoints 
-and consult the [Reconciliation Service API](#https://reconciliation-api.github.io/specs/0.1) on how to use them.
+and consult the [Reconciliation Service API](https://reconciliation-api.github.io/specs/0.1) on how to use them.
 
 ---
 
