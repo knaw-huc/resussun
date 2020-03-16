@@ -41,8 +41,9 @@ and [Redis](#https://redis.io) for the storage of metadata and to provide cachin
 ![](./docs/components.png)
 
 Through the admin interface an administrator can create reconciliation services for any number of configured datasets 
-from various Timbuctoo instances. Resussun will use the [GraphQL](#https://graphql.org) interface 
-provided by Timbuctoo to obtain and index the data in ElasticSearch. Various metadata, like the URL of the Timbuctoo
+from various [Timbuctoo](#https://github.com/HuygensING/timbuctoo) instances. 
+Resussun will use the [GraphQL](#https://graphql.org) interface provided by Timbuctoo 
+to obtain and index the data in ElasticSearch. Various metadata, like the URL of the Timbuctoo
 instance where the data is hosted and the URL of the Timbuctoo GUI, is stored in Redis. 
 
 Resussun will use the metadata stored in Redis to provide a new reconciliation service endpoint 
@@ -141,6 +142,12 @@ This results in the following query:
 As an example, we will be using the [DWC dataset](#https://data.huygens.knaw.nl/details/u74ccc032adf8422d7ea92df96cd4783f0543db3b__dwc) 
 with dataset id `u74ccc032adf8422d7ea92df96cd4783f0543db3b__dwc` 
 from the Huygens ING Timbuctoo instance: `https://repository.huygens.knaw.nl`.
+
+If we would like to create a reconciliation service endpoint for this dataset, an administrator would have to call
+the [createIndex task](#admin-interface) with the following parameters:
+- `dataSetId`: _u74ccc032adf8422d7ea92df96cd4783f0543db3b__dwc_
+- `timbuctooUrl`: _https://repository.huygens.knaw.nl_
+- `timbuctooGuiUrl`: _https://data.huygens.knaw.nl_
 
 The following query is sent to the Timbuctoo GraphQL interface to obtain the properties of the entity with the uri
 `http://example.org/datasets/u33707283d426f900d4d33707283d426f900d4d0d/bia/collection/Places_PL00000011` from the
