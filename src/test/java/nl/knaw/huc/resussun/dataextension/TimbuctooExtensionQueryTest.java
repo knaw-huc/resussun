@@ -1,7 +1,8 @@
 package nl.knaw.huc.resussun.dataextension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nl.knaw.huc.resussun.dataextension.DataExtensionResponse.LiteralPropertyValue;
+import nl.knaw.huc.resussun.model.DataExtensionResponse;
+import nl.knaw.huc.resussun.model.DataExtensionResponse.LiteralPropertyValue;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooResponseMapper;
 import org.assertj.core.util.Lists;

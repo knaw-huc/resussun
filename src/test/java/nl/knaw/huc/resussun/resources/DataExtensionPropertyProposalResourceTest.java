@@ -10,6 +10,7 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
+import nl.knaw.huc.resussun.ApiDataMock;
 import nl.knaw.huc.resussun.configuration.JsonWithPaddingInterceptor;
 import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
 import nl.knaw.huc.resussun.search.SearchClient;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.io.Resources.getResource;
+import static nl.knaw.huc.resussun.resources.ApiParamConverterProviderMock.API_DATA;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,16 +40,16 @@ import static org.mockito.Mockito.mock;
 @ExtendWith(DropwizardExtensionsSupport.class)
 class DataExtensionPropertyProposalResourceTest {
 
-  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final Timbuctoo TIMBUCTOO = mock(Timbuctoo.class);
-  private static final String ROOT_PATH = "/" + ApiParamConverterProviderMock.API_DATA.getDataSourceId();
+  private static final String ROOT_PATH = "/" + API_DATA.getDataSourceId();
   private static final SearchClient SEARCH_CLIENT = mock(SearchClient.class);
   private static final UrlHelperFactory URL_HELPER_FACTORY = new UrlHelperFactory("http://www.example.org");
   private static final ResourceExtension RESOURCES = ResourceExtension
       .builder()
-      .addResource(new ApiResource(SEARCH_CLIENT, URL_HELPER_FACTORY, (url) -> TIMBUCTOO))
+      .addResource(new ApiResource(SEARCH_CLIENT, URL_HELPER_FACTORY))
       .addResource(new JsonWithPaddingInterceptor())
-      .addResource(new ApiParamConverterProviderMock())
+      .addResource(new ApiParamConverterProviderMock(ApiDataMock.fromApiData(API_DATA, TIMBUCTOO)))
       .build();
   private static final String REQUESTED_TYPE = "http://example.org/requestedType";
 

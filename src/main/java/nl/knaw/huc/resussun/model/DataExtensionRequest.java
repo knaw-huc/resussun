@@ -1,4 +1,4 @@
-package nl.knaw.huc.resussun.dataextension;
+package nl.knaw.huc.resussun.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

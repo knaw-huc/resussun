@@ -6,14 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.configuration.UrlHelperFactory;
 import nl.knaw.huc.resussun.dataextension.DataExtensionClient;
-import nl.knaw.huc.resussun.dataextension.DataExtensionRequest;
+import nl.knaw.huc.resussun.model.DataExtensionRequest;
 import nl.knaw.huc.resussun.model.Extend;
-import nl.knaw.huc.resussun.model.ExtendPropertySetting;
 import nl.knaw.huc.resussun.model.Preview;
 import nl.knaw.huc.resussun.model.Query;
 import nl.knaw.huc.resussun.model.ServiceManifest;
 import nl.knaw.huc.resussun.search.SearchClient;
-import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +27,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
-import java.util.function.Function;
 
 @Path("/{api}")
 public class ApiResource {
@@ -38,15 +35,12 @@ public class ApiResource {
 
   private final SearchClient searchClient;
   private final UrlHelperFactory urlHelperFactory;
-  private final Function<String, Timbuctoo> timbuctooFactory;
   private final DataExtensionClient dataExtensionClient;
 
-  public ApiResource(SearchClient searchClient, UrlHelperFactory urlHelperFactory,
-                     Function<String, Timbuctoo> timbuctooFactory) {
+  public ApiResource(SearchClient searchClient, UrlHelperFactory urlHelperFactory) {
     this.searchClient = searchClient;
     this.urlHelperFactory = urlHelperFactory;
-    this.timbuctooFactory = timbuctooFactory;
-    dataExtensionClient = new DataExtensionClient(timbuctooFactory);
+    dataExtensionClient = new DataExtensionClient();
   }
 
   @GET
@@ -79,7 +73,7 @@ public class ApiResource {
   @Path("/extend/properties")
   public DataExtensionPropertyProposalResource extend(@PathParam("api") ApiData api) {
     return new DataExtensionPropertyProposalResource(
-        timbuctooFactory.apply(api.getTimbuctooUrl()),
+        api.getTimbuctoo(),
         api.getDataSourceId()
     );
   }
@@ -132,20 +126,6 @@ public class ApiResource {
             new Extend().proposeProperties(
                 urlHelperFactory.urlHelper(api.getDataSourceId()).template(),
                 "/extend/properties"
-            ).propertySetting(new ExtendPropertySetting<Integer>(
-                "limit",
-                "Limit",
-                "number",
-                0,
-                "Maximum number of values to return per row (0 for no limit)"
-            )).propertySetting(new ExtendPropertySetting<String>(
-                    "content",
-                    "Content",
-                    "select",
-                    "literal",
-                    "Content type: ID or literal"
-                ).choice("id", "ID")
-                 .choice("literal", "Literal")
             )
         );
   }

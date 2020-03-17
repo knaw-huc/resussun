@@ -1,13 +1,14 @@
 package nl.knaw.huc.resussun.dataextension;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import nl.knaw.huc.resussun.dataextension.DataExtensionResponse.LiteralPropertyValue;
-import nl.knaw.huc.resussun.dataextension.DataExtensionResponse.PropertyValue;
+import nl.knaw.huc.resussun.model.DataExtensionResponse.LiteralPropertyValue;
+import nl.knaw.huc.resussun.model.DataExtensionResponse.PropertyValue;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooResponseMapper;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -76,7 +77,7 @@ public class TimbuctooExtensionQuery {
     return new TimbuctooExtensionQueryResponseMapper(dataSetId, subjects, predicates, this::escapeGraphQl);
   }
 
-  private static class TimbuctooExtensionQueryResponseMapper
+  static class TimbuctooExtensionQueryResponseMapper
       implements TimbuctooResponseMapper<Map<String, Map<String, List<? extends PropertyValue>>>> {
 
     private final String dataSetId;
@@ -100,14 +101,14 @@ public class TimbuctooExtensionQuery {
     @Override
     public Map<String, Map<String, List<? extends PropertyValue>>> mapResponse(JsonNode timbuctooResponse) {
       JsonNode data = timbuctooResponse.get("data").get("dataSets").get(dataSetId);
-      Map<String, Map<String, List<? extends PropertyValue>>> mappedResponse = Maps.newHashMap();
+      Map<String, Map<String, List<? extends PropertyValue>>> mappedResponse = new HashMap<>();
 
       for (String subject : subjects) {
         JsonNode subjectNode = data.get(escapeGraphQl.apply(subject));
 
-        Map<String, List<? extends PropertyValue>> properties = Maps.newHashMap();
+        Map<String, List<? extends PropertyValue>> properties = new HashMap<>();
         for (String predicate : predicates) {
-          List<PropertyValue> values = Lists.newArrayList();
+          List<PropertyValue> values = new ArrayList();
           subjectNode.get(escapeGraphQl.apply(predicate)).get("values")
                      .forEach(val -> values.add(new LiteralPropertyValue(val.get("value").textValue())));
 
