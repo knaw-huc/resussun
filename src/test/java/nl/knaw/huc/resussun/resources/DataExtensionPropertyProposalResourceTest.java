@@ -129,7 +129,7 @@ class DataExtensionPropertyProposalResourceTest {
   }
 
   @Test
-  void propertyProposalReturnsOnlyValueProperties() throws Exception {
+  void propertyProposalReturnsValueAndReferenceProperties() throws Exception {
     Mockito.when(TIMBUCTOO.executeRequest(any(), any())).thenReturn(createCollectionMetadata());
 
     final JsonNode response = RESOURCES.target(ROOT_PATH)
@@ -145,7 +145,9 @@ class DataExtensionPropertyProposalResourceTest {
     assertThat(propertyIds, containsInAnyOrder(
         "http://timbuctoo.huygens.knaw.nl/properties/beginDate",
         "http://timbuctoo.huygens.knaw.nl/properties/endDate",
-        "http://timbuctoo.huygens.knaw.nl/properties/original_id"
+        "http://timbuctoo.huygens.knaw.nl/properties/original_id",
+        "http://timbuctoo.huygens.knaw.nl/properties/hasLocation",
+        "http://timbuctoo.huygens.knaw.nl/properties/hasResident"
     ));
   }
 

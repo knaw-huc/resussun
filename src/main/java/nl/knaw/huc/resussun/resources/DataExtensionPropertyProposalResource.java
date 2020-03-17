@@ -3,7 +3,6 @@ package nl.knaw.huc.resussun.resources;
 import nl.knaw.huc.resussun.model.PropertyProposal;
 import nl.knaw.huc.resussun.model.PropertyProposal.Property;
 import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
-import nl.knaw.huc.resussun.timbuctoo.PropertyMetadata;
 import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
 import org.apache.commons.lang3.StringUtils;
@@ -48,10 +47,8 @@ public class DataExtensionPropertyProposalResource {
       if (!collectionMetadata.containsKey(typeId)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      final List<Property> props = collectionMetadata.get(typeId).getProperties().stream()
-                                                     .filter(PropertyMetadata::isValueType)
-                                                     .map(propmd -> new Property(propmd.getUri(), propmd.getName()))
-                                                     .collect(Collectors.toList());
+
+      final List<Property> props = getPropertiesForCollection(typeId, collectionMetadata);
 
       return Response.ok(new PropertyProposal(typeId, props)).build();
 
@@ -61,4 +58,13 @@ public class DataExtensionPropertyProposalResource {
     }
   }
 
+  private List<Property> getPropertiesForCollection(
+      String typeId,
+      Map<String, CollectionMetadata> collectionMetadata
+  ) {
+    return collectionMetadata.get(typeId).getProperties().stream()
+                             .filter(prop -> !prop.getName().equals("rdf_type"))
+                             .map(propmd -> new Property(propmd.getUri(), propmd.getName()))
+                             .collect(Collectors.toList());
+  }
 }
