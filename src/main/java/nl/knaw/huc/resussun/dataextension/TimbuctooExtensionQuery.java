@@ -69,7 +69,7 @@ public class TimbuctooExtensionQuery {
   }
 
   private String escapeGraphQl(String label) {
-    return label.replaceAll("[!$().:=@\\[\\]{|}/]", "_");
+    return label.replaceAll("[!$().:=@\\[\\]{|}/#]", "_");
   }
 
 
