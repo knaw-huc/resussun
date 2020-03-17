@@ -10,17 +10,20 @@ public class PropertyMetadata {
   private final String name;
   private final boolean isList;
   private final boolean isValueType;
+  private final boolean isIncoming;
 
   @JsonCreator
   public PropertyMetadata(@JsonProperty("uri") String uri,
                           @JsonProperty("name") String name,
                           @JsonProperty("isList") boolean isList,
-                          @JsonProperty("isValueType") boolean isValueType
+                          @JsonProperty("isValueType") boolean isValueType,
+                          @JsonProperty("isInverse") boolean isIncoming
   ) {
     this.uri = uri;
     this.name = name;
     this.isList = isList;
     this.isValueType = isValueType;
+    this.isIncoming = isIncoming;
   }
 
   public String getName() {
@@ -56,5 +59,9 @@ public class PropertyMetadata {
 
   public String getUri() {
     return uri;
+  }
+
+  public boolean isOutgoing() {
+    return !isIncoming;
   }
 }

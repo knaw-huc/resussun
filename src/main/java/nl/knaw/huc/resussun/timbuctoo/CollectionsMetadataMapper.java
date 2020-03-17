@@ -59,6 +59,7 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
         "            name\n" +
         "            isList\n" +
         "            isValueType\n" +
+        "            isInverse\n" + // is incoming
         "          }\n" +
         "        }\n" +
         "      }\n" +
