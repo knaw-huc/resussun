@@ -1,6 +1,7 @@
 package nl.knaw.huc.resussun.resources;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import nl.knaw.huc.resussun.model.PropertyProposal;
+import nl.knaw.huc.resussun.model.PropertyProposal.Property;
 import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
 import nl.knaw.huc.resussun.timbuctoo.PropertyMetadata;
 import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
@@ -47,11 +48,10 @@ public class DataExtensionPropertyProposalResource {
       if (!collectionMetadata.containsKey(typeId)) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
-      final List<PropertyProposal.Property> props = collectionMetadata.get(typeId).getProperties().stream()
-                                                                      .filter(PropertyMetadata::isValueType)
-                                                                      .map(propmd -> new PropertyProposal.Property(
-                                                                          propmd.getUri(), propmd.getName()
-                                                                      )).collect(Collectors.toList());
+      final List<Property> props = collectionMetadata.get(typeId).getProperties().stream()
+                                                     .filter(PropertyMetadata::isValueType)
+                                                     .map(propmd -> new Property(propmd.getUri(), propmd.getName()))
+                                                     .collect(Collectors.toList());
 
       return Response.ok(new PropertyProposal(typeId, props)).build();
 
@@ -61,29 +61,4 @@ public class DataExtensionPropertyProposalResource {
     }
   }
 
-  private static class PropertyProposal {
-    @JsonProperty
-    private String type;
-    @JsonProperty
-    private List<Property> properties;
-
-    PropertyProposal(String type, List<Property> properties) {
-
-      this.type = type;
-      this.properties = properties;
-    }
-
-    private static class Property {
-      @JsonProperty
-      private final String name;
-      @JsonProperty
-      private final String id;
-
-      Property(String id, String name) {
-
-        this.name = name;
-        this.id = id;
-      }
-    }
-  }
 }

@@ -1,7 +1,6 @@
 package nl.knaw.huc.resussun.dataextension;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Maps;
 import nl.knaw.huc.resussun.model.DataExtensionResponse.LiteralPropertyValue;
 import nl.knaw.huc.resussun.model.DataExtensionResponse.PropertyValue;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
@@ -38,7 +37,7 @@ public class TimbuctooExtensionQuery {
     );
 
 
-    return new TimbuctooRequest(query, Maps.newHashMap());
+    return new TimbuctooRequest(query, new HashMap<>());
   }
 
   private String createSubjectQuery(List<String> subjects, List<String> predicates) {
@@ -108,7 +107,7 @@ public class TimbuctooExtensionQuery {
 
         Map<String, List<? extends PropertyValue>> properties = new HashMap<>();
         for (String predicate : predicates) {
-          List<PropertyValue> values = new ArrayList();
+          List<PropertyValue> values = new ArrayList<>();
           subjectNode.get(escapeGraphQl.apply(predicate)).get("values")
                      .forEach(val -> values.add(new LiteralPropertyValue(val.get("value").textValue())));
 

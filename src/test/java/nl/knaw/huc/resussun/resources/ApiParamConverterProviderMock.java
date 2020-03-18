@@ -1,8 +1,6 @@
 package nl.knaw.huc.resussun.resources;
 
-import nl.knaw.huc.resussun.ApiDataMock;
 import nl.knaw.huc.resussun.api.ApiData;
-import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;

@@ -32,7 +32,7 @@ public class DataExtensionClient {
     final Timbuctoo timbuctoo = api.getTimbuctoo();
     List<String> propertyIds = extensionRequest.getProperties().stream().map(Property::getId).collect(
         Collectors.toList());
-    Map<String, String> propretyIdNameMap = createPropertyIdNameMap(api, timbuctoo);
+    Map<String, String> propertyIdNameMap = createPropertyIdNameMap(api, timbuctoo);
     Map<String, Map<String, List<? extends PropertyValue>>> rows = new HashMap<>();
     if (!extensionRequest.getEntityIds().isEmpty()) {
 
@@ -49,7 +49,7 @@ public class DataExtensionClient {
     List<ResponseExtendProperty> properties = extensionRequest.getProperties().stream().map(prop -> {
       return new ResponseExtendProperty(
           prop.getId(),
-          propretyIdNameMap.getOrDefault(prop.getId(), ""),
+          propertyIdNameMap.getOrDefault(prop.getId(), ""),
           prop.getSettings().orElse(null)
       );
     }).collect(Collectors.toList());

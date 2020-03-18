@@ -1,7 +1,6 @@
 package nl.knaw.huc.resussun.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nl.knaw.huc.resussun.model.ExtendPropertySetting;
 
 import java.util.List;
 import java.util.Map;

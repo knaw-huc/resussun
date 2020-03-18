@@ -14,7 +14,7 @@ import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 public class Timbuctoo {
   private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
   private final String url;
-  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   public Timbuctoo(String url) {
     this.url = url;
