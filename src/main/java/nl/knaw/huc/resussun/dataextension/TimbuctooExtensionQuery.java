@@ -46,7 +46,7 @@ public class TimbuctooExtensionQuery {
     String predicateQuery = createPredicateQuery(predicates);
     for (String subject : subjects) {
       subjectQuery.append(String.format("%s: subject(uri: \"%s\") {\n" +
-          "  %s\n" +
+          "  %s" +
           "}\n", escapeGraphQl(subject), subject, predicateQuery
       ));
     }
@@ -75,8 +75,11 @@ public class TimbuctooExtensionQuery {
     }
 
     return "  entities {\n" +
-        "   uri\n" +
-        " }\n";
+        "    uri\n" +
+        "    title {\n" +
+        "      value\n" +
+        "    }\n" +
+        "  }\n";
   }
 
   private String escapeGraphQl(String label) {
@@ -133,7 +136,7 @@ public class TimbuctooExtensionQuery {
                        )));
           }
 
-          properties.put(predicateUri, values);
+          properties.put(predicate.getName(), values);
         }
         mappedResponse.put(subject, properties);
 

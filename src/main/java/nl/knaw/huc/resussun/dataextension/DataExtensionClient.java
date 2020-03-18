@@ -41,7 +41,7 @@ public class DataExtensionClient {
           Collectors.toList());
       List<PropertyMetadata> properties = dataSetMetadataMap.values().stream()
                                                          .flatMap(col -> col.getProperties().stream())
-                                                         .filter(prop -> propertyIds.contains(prop.getUri()))
+                                                         .filter(prop -> propertyIds.contains(prop.getName()))
                                                          .collect(Collectors.toList());
 
       TimbuctooExtensionQuery queryCreator = new TimbuctooExtensionQuery(
@@ -67,9 +67,8 @@ public class DataExtensionClient {
   private Map<String, String> createPropertyIdNameMap(Map<String, CollectionMetadata> dataSetMetadataMap) {
     return dataSetMetadataMap.entrySet().stream()
                              .flatMap((entry) -> entry.getValue().getProperties().stream())
-                             .filter(prop -> !prop.getName().startsWith("_inverse_"))
                              .distinct()
-                             .collect(Collectors.toMap(PropertyMetadata::getUri, PropertyMetadata::getName));
+                             .collect(Collectors.toMap(PropertyMetadata::getName, PropertyMetadata::getUri));
   }
 
 }

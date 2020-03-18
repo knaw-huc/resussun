@@ -41,8 +41,8 @@ import static org.mockito.Mockito.when;
 public class DataExtensionClientTest {
 
   private static final String DATA_SOURCE_ID = "dataSourceId";
-  private static final String PROP_ID = "http://timbuctoo.huygens.knaw.nl/properties/beginDate";
-  private static final String PROP_NAME = "tim_beginDate";
+  private static final String PROP_ID = "tim_beginDate" ;
+  private static final String PROP_NAME = "http://timbuctoo.huygens.knaw.nl/properties/beginDate";
   private static final String ID1 = "http://example.org/1";
   private static final String ID2 = "http://example.org/2";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

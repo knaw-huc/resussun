@@ -143,11 +143,12 @@ class DataExtensionPropertyProposalResourceTest {
     Set<String> propertyIds = properties.stream().map(prop -> prop.get("id").asText()).collect(Collectors.toSet());
 
     assertThat(propertyIds, containsInAnyOrder(
-        "http://timbuctoo.huygens.knaw.nl/properties/beginDate",
-        "http://timbuctoo.huygens.knaw.nl/properties/endDate",
-        "http://timbuctoo.huygens.knaw.nl/properties/original_id",
-        "http://timbuctoo.huygens.knaw.nl/properties/hasLocation",
-        "http://timbuctoo.huygens.knaw.nl/properties/hasResident"
+        "tim_beginDate",
+        "tim_hasLocation",
+        "tim_endDate",
+        "tim_original_id",
+        "tim_hasResident"
+
     ));
   }
 

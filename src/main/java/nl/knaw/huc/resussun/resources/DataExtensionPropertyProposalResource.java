@@ -64,7 +64,7 @@ public class DataExtensionPropertyProposalResource {
   ) {
     return collectionMetadata.get(typeId).getProperties().stream()
                              .filter(prop -> !prop.getName().equals("rdf_type"))
-                             .map(propmd -> new Property(propmd.getUri(), propmd.getName()))
+                             .map(propmd -> new PropertyProposal.Property(propmd.getName(), propmd.getUri()))
                              .collect(Collectors.toList());
   }
 }
