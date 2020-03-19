@@ -2,8 +2,6 @@ package nl.knaw.huc.resussun.timbuctoo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 public class TimbuctooRequest {
@@ -17,62 +15,11 @@ public class TimbuctooRequest {
     this.variables = variables;
   }
 
-  public static TimbuctooRequest createCollectionsMetadataRequest(String datasetId) {
-    return new TimbuctooRequest("query dataSetMetaData($dataSet:ID!) {\n" +
-        "  dataSetMetadata(dataSetId: $dataSet) {\n" +
-        "    collectionList {\n" +
-        "      items {\n" +
-        "        collectionId\n" +
-        "        properties {\n" +
-        "          items {\n" +
-        "            name\n" +
-        "            isList\n" +
-        "            isValueType\n" +
-        "          }\n" +
-        "        }\n" +
-        "      }\n" +
-        "    }\n" +
-        "  }\n" +
-        "}", Map.of("dataSet", datasetId));
+  public String getQuery() {
+    return query;
   }
 
-  public static TimbuctooRequest createQueryRequest(String datasetId,
-                                                    String collectionId,
-                                                    List<String> properties,
-                                                    String cursor) {
-    return new TimbuctooRequest(String.format("query data($cursor: ID) {\n" +
-        "  dataSets {\n" +
-        "    %s {\n" +
-        "      %sList(cursor: $cursor count: 1000) {\n" +
-        "        nextCursor\n" +
-        "        items {\n" +
-        "          uri\n" +
-        "          title { value }\n" +
-        "          %s\n" +
-        "        }\n" +
-        "      }\n" +
-        "    }\n" +
-        "  }\n" +
-        "}", datasetId, collectionId, String.join("\n", properties)),
-        cursor != null ? Map.of("cursor", cursor) : Collections.emptyMap());
-  }
-
-  public static TimbuctooRequest createEntityRequest(String datasetId,
-                                                    String collectionId,
-                                                    String uri,
-                                                    List<String> properties) {
-    return new TimbuctooRequest(String.format("query data($uri: String!) {\n" +
-        "  dataSets {\n" +
-        "    %s {\n" +
-        "      %s(uri: $uri) {\n" +
-        "        uri\n" +
-        "        title { value }\n" +
-        "        description { value }\n" +
-        "        image { value }\n" +
-        "        %s\n" +
-        "      }\n" +
-        "    }\n" +
-        "  }\n" +
-        "}", datasetId, collectionId, String.join("\n", properties)), Map.of("uri", uri));
+  public Map<String, String> getVariables() {
+    return variables;
   }
 }

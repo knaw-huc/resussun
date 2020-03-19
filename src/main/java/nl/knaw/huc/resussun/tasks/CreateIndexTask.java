@@ -5,6 +5,7 @@ import io.dropwizard.servlets.tasks.Task;
 import nl.knaw.huc.resussun.api.ApiClient;
 import nl.knaw.huc.resussun.api.ApiData;
 import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
+import nl.knaw.huc.resussun.timbuctoo.PropertyMetadata;
 import nl.knaw.huc.resussun.timbuctoo.CollectionsMetadataMapper;
 import nl.knaw.huc.resussun.timbuctoo.QueryResponse;
 import nl.knaw.huc.resussun.timbuctoo.QueryResponseItem;
@@ -62,9 +63,9 @@ public class CreateIndexTask extends Task {
 
     createIndex(dataSetId);
 
-    Map<String, List<CollectionMetadata>> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
-    for (Map.Entry<String, List<CollectionMetadata>> collectionMetadata : collectionsMetadata.entrySet()) {
-      List<String> props = getPropsFromMetadata(collectionMetadata.getValue());
+    Map<String, CollectionMetadata> collectionsMetadata = getCollectionsMetadata(timbuctoo, dataSetId);
+    for (Map.Entry<String, CollectionMetadata> collectionMetadata : collectionsMetadata.entrySet()) {
+      List<String> props = getPropsFromMetadata(collectionMetadata.getValue().getProperties());
       queryData(timbuctoo, dataSetId, collectionMetadata.getKey(), props, null);
     }
   }
@@ -101,7 +102,7 @@ public class CreateIndexTask extends Task {
 
   private void queryData(Timbuctoo timbuctoo, String dataSetId, String collectionId, List<String> props, String cursor)
       throws TimbuctooException, IOException {
-    TimbuctooRequest request = TimbuctooRequest.createQueryRequest(dataSetId, collectionId, props, cursor);
+    TimbuctooRequest request = QueryResponseMapper.createQueryRequest(dataSetId, collectionId, props, cursor);
     QueryResponse queryResponse = timbuctoo.executeRequest(request, new QueryResponseMapper());
 
     processData(dataSetId, collectionId, queryResponse.getItems());
@@ -133,14 +134,15 @@ public class CreateIndexTask extends Task {
     elasticSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
   }
 
-  private static Map<String, List<CollectionMetadata>> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)
+  private static Map<String, CollectionMetadata> getCollectionsMetadata(Timbuctoo timbuctoo, String dataSetId)
       throws TimbuctooException {
-    TimbuctooRequest request = TimbuctooRequest.createCollectionsMetadataRequest(dataSetId);
-    return timbuctoo.executeRequest(request, new CollectionsMetadataMapper());
+    TimbuctooRequest request = CollectionsMetadataMapper.createCollectionsMetadataRequest(dataSetId);
+
+    return timbuctoo.executeRequest(request, CollectionsMetadataMapper.collectionIdAsKey());
   }
 
-  private static List<String> getPropsFromMetadata(List<CollectionMetadata> collectionMetadata) {
-    return collectionMetadata
+  private static List<String> getPropsFromMetadata(List<PropertyMetadata> propertyMetadata) {
+    return propertyMetadata
         .stream()
         .filter(prop -> prop.getName().startsWith("rdf_type") || prop.isValueType())
         .map(prop -> {
