@@ -3,6 +3,8 @@ package nl.knaw.huc.resussun.timbuctoo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,6 +18,7 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
   private static final String COLLECTION_ID_PROP = "collectionId";
   private static final String COLLECTION_LIST_ID_PROP = "collectionListId";
   private static final String URI_PROP = "uri";
+  public static final Logger LOG = LoggerFactory.getLogger(CollectionsMetadataMapper.class);
   private final String key;
 
   private CollectionsMetadataMapper(String key) {
@@ -33,6 +36,8 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
       );
       return new CollectionMetadata(collectionId, collectionListId, uri, properties);
     } catch (JsonProcessingException e) {
+      LOG.error("Could not map properties: {}",collection.get("properties").get("items") );
+      LOG.error("Mapping exception",e);
       return new CollectionMetadata(collectionId, collectionListId, uri, Collections.emptyList());
     }
   }
@@ -60,6 +65,9 @@ public class CollectionsMetadataMapper implements TimbuctooResponseMapper<Map<St
         "            isList\n" +
         "            isValueType\n" +
         "            isInverse\n" + // is incoming
+        "            referencedCollections {\n" +
+        "              items\n" +
+        "            }" +
         "          }\n" +
         "        }\n" +
         "      }\n" +
