@@ -81,37 +81,67 @@ class DataExtensionPropertyProposalResourceTest {
             "    \"uri\": \"http://www.w3.org/1999/02/22-rdf-syntax-ns#type\",\n" +
             "    \"name\": \"rdf_type\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": false\n" +
+            "    \"isValueType\": false,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": [\n" +
+            "        \"http___timbuctoo_huygens_knaw_nl_static_v5_vocabulary_unknown\"\n" +
+            "      ]\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/beginDate\",\n" +
             "    \"name\": \"tim_beginDate\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": true\n" +
+            "    \"isValueType\": true,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": []\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/hasLocation\",\n" +
             "    \"name\": \"tim_hasLocation\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": false\n" +
+            "    \"isValueType\": false,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": [\n" +
+            "        \"clusius_Places\"\n" +
+            "      ]\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/endDate\",\n" +
             "    \"name\": \"tim_endDate\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": true\n" +
+            "    \"isValueType\": true,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": []\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/original_id\",\n" +
             "    \"name\": \"tim_original_id\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": true\n" +
+            "    \"isValueType\": true,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": []\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/hasResident\",\n" +
             "    \"name\": \"tim_hasResident\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": false\n" +
+            "    \"isValueType\": false,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": [\n" +
+            "        \"clusius_Persons\"\n" +
+            "      ]\n" +
+            "    }\n" +
             "  }\n" +
             "]",
         new TypeReference<>() {

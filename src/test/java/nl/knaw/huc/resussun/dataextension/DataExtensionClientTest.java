@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.networknt.schema.JsonSchema;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,11 +43,15 @@ import static org.mockito.Mockito.when;
 public class DataExtensionClientTest {
 
   private static final String DATA_SOURCE_ID = "dataSourceId";
-  private static final String PROP_ID = "tim_beginDate" ;
-  private static final String PROP_NAME = "http://timbuctoo.huygens.knaw.nl/properties/beginDate";
+  private static final String VALUE_PROP_ID = "tim_beginDate";
+  private static final String VALUE_PROP_NAME = "http://timbuctoo.huygens.knaw.nl/properties/beginDate";
   private static final String ID1 = "http://example.org/1";
   private static final String ID2 = "http://example.org/2";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final String REF_PROP_NAME = "http://timbuctoo.huygens.knaw.nl/properties/hasLocation";
+  private static final String REF_PROP_ID = "tim_hasLocation";
+  private static final String REF_COL_ID = "clusius_Places";
+  private static final String REF_COL_NAME = "http://example.org/place";
   private ApiData apiData;
   private DataExtensionClient instance;
   private Timbuctoo timbuctoo;
@@ -61,7 +67,7 @@ public class DataExtensionClientTest {
   void returnsAValidResponseWithoutRowsForRequestsWithoutIds() throws Exception {
     final JsonSchema schema = createSchemaValidator("data_extension_response_schema.json");
     List<Property> properties = Lists.newArrayList();
-    properties.add(new Property(PROP_ID, null));
+    properties.add(new Property(VALUE_PROP_ID, null));
     DataExtensionRequest extensionRequest = new DataExtensionRequest(Lists.newArrayList(), properties);
     when(timbuctoo.executeRequest(any(), any(CollectionsMetadataMapper.class))).thenReturn(createCollectionMetadata());
 
@@ -78,12 +84,12 @@ public class DataExtensionClientTest {
   void returnsAValidResponseForRequestsWithIds() throws Exception {
     final JsonSchema schema = createSchemaValidator("data_extension_response_schema.json");
     List<Property> properties = Lists.newArrayList();
-    properties.add(new Property(PROP_ID, null));
+    properties.add(new Property(VALUE_PROP_ID, null));
     Map<String, Map<String, List<? extends PropertyValue>>> queryResponse = Maps.newHashMap();
-    queryResponse.put(ID1, ImmutableMap.of(PROP_ID,
+    queryResponse.put(ID1, ImmutableMap.of(VALUE_PROP_ID,
         Lists.newArrayList(new DataExtensionResponse.LiteralPropertyValue("value1"))
     ));
-    queryResponse.put(ID2, ImmutableMap.of(PROP_ID,
+    queryResponse.put(ID2, ImmutableMap.of(VALUE_PROP_ID,
         Lists.newArrayList(new DataExtensionResponse.LiteralPropertyValue("value2"))
     ));
     when(timbuctoo.executeRequest(any(), any(TimbuctooExtensionQueryResponseMapper.class))).thenReturn(queryResponse);
@@ -101,24 +107,40 @@ public class DataExtensionClientTest {
   }
 
   @Test
-  void returnsMetaDataWithTheRightNames() throws Exception {
+  void returnsRightMetadataForLiteralProperties() throws Exception {
     List<Property> properties = Lists.newArrayList();
-    properties.add(new Property(PROP_ID, null));
+    properties.add(new Property(VALUE_PROP_ID, null));
+    final DataExtensionRequest extensionRequest = new DataExtensionRequest(Lists.newArrayList(), properties);
     Map<String, Map<String, List<? extends PropertyValue>>> queryResponse = Maps.newHashMap();
-    queryResponse.put(ID1, ImmutableMap.of(PROP_ID,
-        Lists.newArrayList(new DataExtensionResponse.LiteralPropertyValue("value1"))
-    ));
-    queryResponse.put(ID2, ImmutableMap.of(PROP_ID,
-        Lists.newArrayList(new DataExtensionResponse.LiteralPropertyValue("value2"))
-    ));
     when(timbuctoo.executeRequest(any(), any(TimbuctooExtensionQueryResponseMapper.class))).thenReturn(queryResponse);
     when(timbuctoo.executeRequest(any(), any(CollectionsMetadataMapper.class))).thenReturn(createCollectionMetadata());
-    final DataExtensionRequest extensionRequest = new DataExtensionRequest(Lists.newArrayList(ID1, ID2), properties);
 
     JsonNode extensionResponse = instance.createExtensionResponse(apiData, extensionRequest);
 
-    assertThat(extensionResponse.get("meta").get(0).get("name").asText(), is(PROP_NAME));
+    assertThat(extensionResponse.get("meta").get(0).get("name").asText(), is(VALUE_PROP_NAME));
+    assertThat(extensionResponse.get("meta").get(0).get("id").asText(), is(VALUE_PROP_ID));
 
+  }
+
+  @Test
+  void returnsMetaWithTypeInformationForRefProperties() throws Exception {
+    List<Property> properties = Lists.newArrayList();
+    properties.add(new Property(REF_PROP_ID, null));
+    final DataExtensionRequest extensionRequest = new DataExtensionRequest(Lists.newArrayList(), properties);
+    Map<String, Map<String, List<? extends PropertyValue>>> queryResponse = Maps.newHashMap();
+    when(timbuctoo.executeRequest(any(), any(TimbuctooExtensionQueryResponseMapper.class))).thenReturn(queryResponse);
+    when(timbuctoo.executeRequest(any(), any(CollectionsMetadataMapper.class))).thenReturn(createCollectionMetadata());
+    final ObjectNode type = OBJECT_MAPPER.createObjectNode()
+                                         .put("name", REF_COL_NAME)
+                                         .put("id", REF_COL_NAME  );
+    final ObjectNode expectedPropertyMetadata = OBJECT_MAPPER.createObjectNode();
+    expectedPropertyMetadata.put("name", REF_PROP_NAME)
+                            .put("id", REF_PROP_ID)
+                            .set("type", type);
+
+    JsonNode extensionResponse = instance.createExtensionResponse(apiData, extensionRequest);
+
+    assertThat(extensionResponse.get("meta").get(0), is(expectedPropertyMetadata));
   }
 
   private Map<String, CollectionMetadata> createCollectionMetadata() throws JsonProcessingException {
@@ -128,37 +150,67 @@ public class DataExtensionClientTest {
             "    \"uri\": \"http://www.w3.org/1999/02/22-rdf-syntax-ns#type\",\n" +
             "    \"name\": \"rdf_type\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": false\n" +
+            "    \"isValueType\": false,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": [\n" +
+            "        \"http___timbuctoo_huygens_knaw_nl_static_v5_vocabulary_unknown\"\n" +
+            "      ]\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/beginDate\",\n" +
             "    \"name\": \"tim_beginDate\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": true\n" +
+            "    \"isValueType\": true,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": []\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/hasLocation\",\n" +
             "    \"name\": \"tim_hasLocation\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": false\n" +
+            "    \"isValueType\": false,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": [\n" +
+            "        \"clusius_Places\"\n" +
+            "      ]\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/endDate\",\n" +
             "    \"name\": \"tim_endDate\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": true\n" +
+            "    \"isValueType\": true,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": []\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/original_id\",\n" +
             "    \"name\": \"tim_original_id\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": true\n" +
+            "    \"isValueType\": true,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": []\n" +
+            "    }\n" +
             "  },\n" +
             "  {\n" +
             "    \"uri\": \"http://timbuctoo.huygens.knaw.nl/properties/hasResident\",\n" +
             "    \"name\": \"tim_hasResident\",\n" +
             "    \"isList\": false,\n" +
-            "    \"isValueType\": false\n" +
+            "    \"isValueType\": false,\n" +
+            "    \"isInverse\": false,\n" +
+            "    \"referencedCollections\": {\n" +
+            "      \"items\": [\n" +
+            "        \"clusius_Persons\"\n" +
+            "      ]\n" +
+            "    }\n" +
             "  }\n" +
             "]",
         new TypeReference<>() {
@@ -171,6 +223,14 @@ public class DataExtensionClientTest {
         propertyMetadataList
     );
     dataSetMetadata.put("REQUESTED_TYPE", collectionMetadata);
+    final CollectionMetadata referenceCollection = new CollectionMetadata(
+        REF_COL_ID,
+        REF_COL_ID + "List",
+        REF_COL_NAME,
+        new ArrayList<>()
+    );
+    dataSetMetadata.put(REF_COL_ID, referenceCollection);
+
 
     return dataSetMetadata;
   }

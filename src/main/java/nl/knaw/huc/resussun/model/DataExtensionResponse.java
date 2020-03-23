@@ -1,5 +1,6 @@
 package nl.knaw.huc.resussun.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -9,41 +10,71 @@ import java.util.Objects;
 public class DataExtensionResponse {
 
   @JsonProperty
-  private final List<ResponseExtendProperty> meta;
+  private final List<DataExtensionResponsePropertyMetadata> meta;
   @JsonProperty
   private final Map<String, Map<String, List<? extends PropertyValue>>> rows;
 
-  public DataExtensionResponse(List<ResponseExtendProperty> meta,
+  public DataExtensionResponse(List<DataExtensionResponsePropertyMetadata> meta,
                                Map<String, Map<String, List<? extends PropertyValue>>> rows) {
     this.meta = meta;
     this.rows = rows;
+  }
+
+  public static DataExtensionResponsePropertyMetadata createPropertyMetadata(String id, String name,
+                                                                             Map<String, String> settings) {
+    return new DataExtensionResponsePropertyMetadata(id, name, settings, null);
+  }
+
+  public static DataExtensionResponsePropertyMetadata createPropertyMetadata(String id, String name,
+                                                                             Map<String, String> settings, Type type) {
+    return new DataExtensionResponsePropertyMetadata(id, name, settings, type);
+  }
+
+  public static class Type {
+    @JsonProperty
+    private final String name;
+    @JsonProperty
+    private final String id;
+
+    public Type(String name, String id) {
+      this.name = name;
+      this.id = id;
+    }
   }
 
   public interface PropertyValue {
 
   }
 
-  public static class ResponseExtendProperty {
+  public static class DataExtensionResponsePropertyMetadata {
     private final String id;
     private final String name;
     private final Map<String, String> settings;
+    private final Type type;
 
-    public ResponseExtendProperty(String id, String name, Map<String, String> settings) {
+    public DataExtensionResponsePropertyMetadata(String id, String name, Map<String, String> settings, Type type) {
       this.id = id;
       this.name = name;
       this.settings = settings;
+      this.type = type;
     }
 
     public String getId() {
       return id;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, String> getSettings() {
       return settings;
     }
 
     public String getName() {
       return name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Type getType() {
+      return type;
     }
   }
 
