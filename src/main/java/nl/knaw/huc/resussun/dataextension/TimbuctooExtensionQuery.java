@@ -47,7 +47,7 @@ public class TimbuctooExtensionQuery {
     for (String subject : subjects) {
       subjectQuery.append(String.format("%s: subject(uri: \"%s\") {\n" +
           "  %s" +
-          "}\n", escapeGraphQl(subject), subject, predicateQuery
+          "}\n", GraphQlHelper.escapeGraphQl(subject), subject, predicateQuery
       ));
     }
 
@@ -60,7 +60,7 @@ public class TimbuctooExtensionQuery {
       String predicateUri = predicate.getUri();
       predicateQuery.append(String.format("%s: getAllOfPredicate(uri: \"%s\" outgoing: %b) {\n" +
           createPredQueryBody(predicate.isValueType()) +
-          "}\n", escapeGraphQl(predicateUri), predicateUri, predicate.isOutgoing()
+          "}\n", GraphQlHelper.escapeGraphQl(predicateUri), predicateUri, predicate.isOutgoing()
       ));
     }
 
@@ -82,13 +82,9 @@ public class TimbuctooExtensionQuery {
         "  }\n";
   }
 
-  private String escapeGraphQl(String label) {
-    return label.replaceAll("[!$().:=@\\[\\]{|}/#]", "_");
-  }
-
 
   public TimbuctooResponseMapper<Map<String, Map<String, List<? extends PropertyValue>>>> createMapper() {
-    return new TimbuctooExtensionQueryResponseMapper(dataSetId, subjects, predicates, this::escapeGraphQl);
+    return new TimbuctooExtensionQueryResponseMapper(dataSetId, subjects, predicates, GraphQlHelper::escapeGraphQl);
   }
 
   static class TimbuctooExtensionQueryResponseMapper
