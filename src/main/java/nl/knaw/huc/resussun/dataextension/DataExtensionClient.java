@@ -82,7 +82,7 @@ public class DataExtensionClient {
     return dataSetMetadataMap.entrySet().stream()
                              .filter(entry -> refColIds.contains(entry.getKey()))
                              .map(Map.Entry::getValue)
-                             .map(col -> new DataExtensionResponse.Type(col.getUri(), col.getUri()))
+                             .map(col -> new DataExtensionResponse.Type(col.getUri(), col.getCollectionId()))
                              .findFirst().orElse(null);
   }
 

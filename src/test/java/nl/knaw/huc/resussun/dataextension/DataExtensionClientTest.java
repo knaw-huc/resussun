@@ -51,7 +51,7 @@ public class DataExtensionClientTest {
   private static final String REF_PROP_NAME = "http://timbuctoo.huygens.knaw.nl/properties/hasLocation";
   private static final String REF_PROP_ID = "tim_hasLocation";
   private static final String REF_COL_ID = "clusius_Places";
-  private static final String REF_COL_NAME = "http://example.org/place";
+  private static final String REF_COL_URI = "http://example.org/place";
   private ApiData apiData;
   private DataExtensionClient instance;
   private Timbuctoo timbuctoo;
@@ -131,8 +131,8 @@ public class DataExtensionClientTest {
     when(timbuctoo.executeRequest(any(), any(TimbuctooExtensionQueryResponseMapper.class))).thenReturn(queryResponse);
     when(timbuctoo.executeRequest(any(), any(CollectionsMetadataMapper.class))).thenReturn(createCollectionMetadata());
     final ObjectNode type = OBJECT_MAPPER.createObjectNode()
-                                         .put("name", REF_COL_NAME)
-                                         .put("id", REF_COL_NAME  );
+                                         .put("name", REF_COL_URI)
+                                         .put("id", REF_COL_ID);
     final ObjectNode expectedPropertyMetadata = OBJECT_MAPPER.createObjectNode();
     expectedPropertyMetadata.put("name", REF_PROP_NAME)
                             .put("id", REF_PROP_ID)
@@ -226,7 +226,7 @@ public class DataExtensionClientTest {
     final CollectionMetadata referenceCollection = new CollectionMetadata(
         REF_COL_ID,
         REF_COL_ID + "List",
-        REF_COL_NAME,
+        REF_COL_URI,
         new ArrayList<>()
     );
     dataSetMetadata.put(REF_COL_ID, referenceCollection);
