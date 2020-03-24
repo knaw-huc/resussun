@@ -53,7 +53,6 @@ public class DataExtensionClient {
       rows = timbuctoo.executeRequest(timbuctooRequest, queryCreator.createMapper());
     }
 
-    // dataSetMetadataMap.values().stream().
     final Map<String, PropertyMetadata> propertyIdPropertyMap = createPropertyIdPropertyMap(dataSetMetadataMap);
     List<DataExtensionResponsePropertyMetadata> properties = extensionRequest.getProperties().stream().map(prop -> {
       final PropertyMetadata metadata = propertyIdPropertyMap.getOrDefault(prop.getId(), null);
