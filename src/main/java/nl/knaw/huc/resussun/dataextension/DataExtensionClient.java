@@ -17,6 +17,7 @@ import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static nl.knaw.huc.resussun.timbuctoo.CollectionsMetadataMapper.collectionIdAsKey;
@@ -39,10 +40,10 @@ public class DataExtensionClient {
     if (!extensionRequest.getEntityIds().isEmpty()) {
       List<String> propertyIds = extensionRequest.getProperties().stream().map(Property::getId).collect(
           Collectors.toList());
-      List<PropertyMetadata> properties = dataSetMetadataMap.values().stream()
-                                                            .flatMap(col -> col.getProperties().stream())
-                                                            .filter(prop -> propertyIds.contains(prop.getName()))
-                                                            .collect(Collectors.toList());
+      Set<PropertyMetadata> properties = dataSetMetadataMap.values().stream()
+                                                           .flatMap(col -> col.getProperties().stream())
+                                                           .filter(prop -> propertyIds.contains(prop.getName()))
+                                                           .collect(Collectors.toSet());
 
       TimbuctooExtensionQuery queryCreator = new TimbuctooExtensionQuery(
           api.getDataSourceId(),

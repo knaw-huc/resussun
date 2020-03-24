@@ -12,14 +12,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public class TimbuctooExtensionQuery {
   private final String dataSetId;
   private final List<String> subjects;
-  private final List<PropertyMetadata> predicates;
+  private final Set<PropertyMetadata> predicates;
 
-  public TimbuctooExtensionQuery(String dataSetId, List<String> subjects, List<PropertyMetadata> predicates) {
+  public TimbuctooExtensionQuery(String dataSetId, List<String> subjects, Set<PropertyMetadata> predicates) {
 
     this.dataSetId = dataSetId;
     this.subjects = subjects;
@@ -35,15 +36,15 @@ public class TimbuctooExtensionQuery {
             "  }\n" +
             "}",
         dataSetId,
-        createSubjectQuery(subjects, predicates)
+        createSubjectQuery()
     );
 
     return new TimbuctooRequest(query, new HashMap<>());
   }
 
-  private String createSubjectQuery(List<String> subjects, List<PropertyMetadata> predicates) {
+  private String createSubjectQuery() {
     StringBuilder subjectQuery = new StringBuilder();
-    String predicateQuery = createPredicateQuery(predicates);
+    String predicateQuery = createPredicateQuery();
     for (String subject : subjects) {
       subjectQuery.append(String.format("%s: subject(uri: \"%s\") {\n" +
           "  %s" +
@@ -54,7 +55,7 @@ public class TimbuctooExtensionQuery {
     return subjectQuery.toString();
   }
 
-  private String createPredicateQuery(List<PropertyMetadata> predicates) {
+  private String createPredicateQuery() {
     StringBuilder predicateQuery = new StringBuilder();
     for (PropertyMetadata predicate : predicates) {
       String predicateUri = predicate.getUri();
@@ -92,14 +93,14 @@ public class TimbuctooExtensionQuery {
 
     private final String dataSetId;
     private final List<String> subjects;
-    private final List<PropertyMetadata> predicates;
+    private final Set<PropertyMetadata> predicates;
     private final Function<String, String> escapeGraphQl;
 
 
     public TimbuctooExtensionQueryResponseMapper(
         String dataSetId,
         List<String> subjects,
-        List<PropertyMetadata> predicates,
+        Set<PropertyMetadata> predicates,
         Function<String, String> escapeGraphQl
     ) {
       this.dataSetId = dataSetId;
@@ -119,7 +120,7 @@ public class TimbuctooExtensionQuery {
         Map<String, List<? extends PropertyValue>> properties = new HashMap<>();
 
         for (PropertyMetadata predicate : predicates) {
-          List<PropertyValue> values = new ArrayList();
+          List<PropertyValue> values = new ArrayList<>();
           String predicateUri = predicate.getUri();
           if (predicate.isValueType()) {
             subjectNode.get(escapeGraphQl.apply(predicateUri)).get("values")

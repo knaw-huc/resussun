@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -67,7 +68,7 @@ class TimbuctooExtensionQueryTest {
         "http://timbuctoo.huygens.knaw.nl/datasets/clusius/Place_PL00000001",
         "http://timbuctoo.huygens.knaw.nl/datasets/clusius/Place_PL00000003"
     );
-    List<PropertyMetadata> predicates = List.of(
+    Set<PropertyMetadata> predicates = Set.of(
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/name", "tim_name", false, true, false),
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/country", "tim_country", false, true, false)
     );
@@ -111,7 +112,7 @@ class TimbuctooExtensionQueryTest {
 
 
     List<String> subjects = List.of("http://timbuctoo.huygens.knaw.nl/datasets/clusius/Persons_PE00011941");
-    List<PropertyMetadata> predicates = List.of(
+    Set<PropertyMetadata> predicates = Set.of(
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/hasBirthPlace", "tim_hasBirthPlace", false,
             false, false),
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/hasMember", "tim_hasMember", false, false,
@@ -147,7 +148,7 @@ class TimbuctooExtensionQueryTest {
     String id = "http___timbuctoo_huygens_knaw_nl_datasets_clusius_Place_PL00000001";
     List<String> subjects = Lists.newArrayList(id);
     String property = "tim_country";
-    List<PropertyMetadata> predicates = List.of(
+    Set<PropertyMetadata> predicates = Set.of(
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/country", property, false, true, false)
     );
     TimbuctooResponseMapper<Map<String, Map<String, List<? extends DataExtensionResponse.PropertyValue>>>> mapper =
@@ -197,11 +198,10 @@ class TimbuctooExtensionQueryTest {
     List<String> subjects = List.of(id);
     String prop1 = "tim_hasBirthPlace";
     String prop2 = "tim_hasMember";
-    List<PropertyMetadata> predicates = List.of(
+    Set<PropertyMetadata> predicates = Set.of(
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/hasBirthPlace", prop1, false, false, false),
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/hasMember", prop2, false, false, true)
     );
-    TimbuctooExtensionQuery instance = new TimbuctooExtensionQuery(DATA_SET_ID, subjects, predicates);
 
     TimbuctooResponseMapper<Map<String, Map<String, List<? extends DataExtensionResponse.PropertyValue>>>> mapper =
         new TimbuctooExtensionQuery(DATA_SET_ID, subjects, predicates).createMapper();
