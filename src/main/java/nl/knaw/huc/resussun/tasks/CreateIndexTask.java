@@ -14,12 +14,11 @@ import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.script.Script;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -105,31 +104,29 @@ public class CreateIndexTask extends Task {
     TimbuctooRequest request = QueryResponseMapper.createQueryRequest(dataSetId, collectionId, props, cursor);
     QueryResponse queryResponse = timbuctoo.executeRequest(request, new QueryResponseMapper());
 
-    processData(dataSetId, collectionId, queryResponse.getItems());
+    processData(dataSetId, queryResponse.getItems());
 
     if (queryResponse.getNextCursor() != null) {
       queryData(timbuctoo, dataSetId, collectionId, props, queryResponse.getNextCursor());
     }
   }
 
-  private void processData(String indexName, String collectionId, List<QueryResponseItem> data) throws IOException {
+  private void processData(String indexName, List<QueryResponseItem> data) throws IOException {
     BulkRequest bulkRequest = new BulkRequest();
     data.iterator().forEachRemaining(entity -> {
-      UpdateRequest updateRequest = new UpdateRequest()
+      IndexRequest indexRequest = new IndexRequest()
           .index(indexName)
           .id(entity.getUri())
-          .script(new Script("ctx._source.collectionIds.add('" + collectionId + "')"))
-          .upsert(
+          .source(
               "uri", entity.getUri(),
               "types", entity.getTypes(),
-              "collectionIds", List.of(collectionId),
               "title", entity.getTitle(),
               "values", entity.getValues().values().stream()
                               .flatMap(List::stream)
                               .collect(Collectors.joining(" "))
           );
 
-      bulkRequest.add(updateRequest);
+      bulkRequest.add(indexRequest);
     });
     elasticSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
   }

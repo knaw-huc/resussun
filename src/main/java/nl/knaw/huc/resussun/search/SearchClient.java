@@ -5,8 +5,6 @@ import nl.knaw.huc.resussun.model.Candidate;
 import nl.knaw.huc.resussun.model.Candidates;
 import nl.knaw.huc.resussun.model.Query;
 import nl.knaw.huc.resussun.timbuctoo.CollectionMetadata;
-import nl.knaw.huc.resussun.timbuctoo.CollectionsMetadataMapper;
-import nl.knaw.huc.resussun.timbuctoo.Timbuctoo;
 import nl.knaw.huc.resussun.timbuctoo.TimbuctooException;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
@@ -42,12 +40,20 @@ public class SearchClient {
     this.elasticsearchClient = elasticsearchClient;
   }
 
-  public List<String> getCollectionIdsForId(String indexName, String id) throws IOException {
-    final GetRequest getRequest = new GetRequest(indexName, id);
+  public List<String> getCollectionIdsForId(ApiData apiData, String id) throws IOException {
+    final GetRequest getRequest = new GetRequest(apiData.getDataSourceId(), id);
     final GetResponse getResponse = elasticsearchClient.get(getRequest, RequestOptions.DEFAULT);
 
-    // Collection ids are mapped to a list of strings in ElasticSearch, so we can safely cast the object to a list
-    return (List<String>) getResponse.getSource().get("collectionIds");
+    try {
+      final Map<String, CollectionMetadata> metadataMap = apiData.getTimbuctoo().executeRequest(
+          createCollectionsMetadataRequest(apiData.getDataSourceId()), uriAsKey()
+      );
+      return ((List<String>) getResponse.getSource().get("types")).stream()
+                                                                 .map(type -> mapType(type, metadataMap))
+                                                                 .collect(Collectors.toList());
+    } catch (TimbuctooException e) {
+      throw new IOException(e);
+    }
   }
 
   public Map<String, Candidates> search(ApiData apiData, Map<String, Query> queries)
