@@ -10,6 +10,7 @@ import nl.knaw.huc.resussun.timbuctoo.TimbuctooResponseMapper;
 import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,8 +69,11 @@ class TimbuctooExtensionQueryTest {
         "http://timbuctoo.huygens.knaw.nl/datasets/clusius/Place_PL00000001",
         "http://timbuctoo.huygens.knaw.nl/datasets/clusius/Place_PL00000003"
     );
-    Set<PropertyMetadata> predicates = Set.of(
-        new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/name", "tim_name", false, true, false),
+    Set<PropertyMetadata> predicates = new LinkedHashSet<>();
+    predicates.add(
+        new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/name", "tim_name", false, true, false)
+    );
+    predicates.add(
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/country", "tim_country", false, true, false)
     );
     TimbuctooExtensionQuery instance = new TimbuctooExtensionQuery(DATA_SET_ID, subjects, predicates);
@@ -112,9 +116,12 @@ class TimbuctooExtensionQueryTest {
 
 
     List<String> subjects = List.of("http://timbuctoo.huygens.knaw.nl/datasets/clusius/Persons_PE00011941");
-    Set<PropertyMetadata> predicates = Set.of(
+    Set<PropertyMetadata> predicates = new LinkedHashSet<>();
+    predicates.add(
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/hasBirthPlace", "tim_hasBirthPlace", false,
-            false, false),
+            false, false)
+    );
+    predicates.add(
         new PropertyMetadata("http://timbuctoo.huygens.knaw.nl/properties/hasMember", "tim_hasMember", false, false,
             true)
     );
