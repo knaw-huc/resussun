@@ -83,7 +83,7 @@ public class ApiResource {
       try {
         Map<String, Query> queries = OBJECT_MAPPER.readValue(queriesJson, new TypeReference<>() {
         });
-        return Response.ok(searchClient.search(api.getDataSourceId(), queries)).build();
+        return Response.ok(searchClient.search(api, queries)).build();
       } catch (JsonProcessingException e) {
         LOG.info("request not supported: {}", e.getMessage());
         return Response.status(Response.Status.BAD_REQUEST).build();

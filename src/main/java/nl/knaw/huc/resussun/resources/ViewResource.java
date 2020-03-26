@@ -22,7 +22,7 @@ public class ViewResource {
   @GET
   public Response view(@QueryParam("id") String id) {
     try {
-      List<String> collectionIds = searchClient.getCollectionIdsForId(apiData.getDataSourceId(), id);
+      List<String> collectionIds = searchClient.getCollectionIdsForId(apiData, id);
       URI uri = apiData.getTimbuctooGuiUrlHelper()
                        .path("details")
                        .path(apiData.getDataSourceId())
