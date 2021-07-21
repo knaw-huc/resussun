@@ -29,7 +29,13 @@ public class Timbuctoo {
                                        .POST(ofByteArray(OBJECT_MAPPER.writeValueAsBytes(timbuctooRequest)))
                                        .build();
 
-      HttpResponse<byte[]> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
+      int attempt = 1;
+      HttpResponse<byte[]> response = null;
+      while (attempt <= 10 && (response == null || response.statusCode() != 200)) {
+        response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        attempt++;
+      }
+
       if (response.statusCode() != 200) {
         throw new TimbuctooException("Request to Timbuctoo did not yield a successful status code");
       }
