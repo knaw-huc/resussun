@@ -13,8 +13,10 @@ import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 
 public class Timbuctoo {
   private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
-  private final String url;
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+  private final String url;
+  private int attempt = 1;
 
   public Timbuctoo(String url) {
     this.url = url;
@@ -29,13 +31,9 @@ public class Timbuctoo {
                                        .POST(ofByteArray(OBJECT_MAPPER.writeValueAsBytes(timbuctooRequest)))
                                        .build();
 
-      int attempt = 1;
-      HttpResponse<byte[]> response = null;
-      while (attempt <= 10 && (response == null || response.statusCode() != 200)) {
-        response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
-        attempt++;
-      }
+      HttpResponse<byte[]> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
+      attempt = 1;
       if (response.statusCode() != 200) {
         throw new TimbuctooException("Request to Timbuctoo did not yield a successful status code");
       }
@@ -50,7 +48,17 @@ public class Timbuctoo {
 
       return responseMapper.mapResponse(json);
     } catch (InterruptedException | IOException e) {
-      throw new TimbuctooException("Failed to execute a request to Timbuctoo", e);
+      if (attempt > 10) {
+        throw new TimbuctooException("Failed to execute a request to Timbuctoo", e);
+      }
+    } finally {
+      try {
+        attempt++;
+        Thread.sleep(1000L * attempt);
+      } catch (InterruptedException ignored) {
+      }
     }
+
+    return this.executeRequest(timbuctooRequest, responseMapper);
   }
 }
