@@ -7,11 +7,10 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
     | tar -xzC /usr/share/maven --strip-components=1 \
   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
-RUN mkdir /build
-WORKDIR /build
-
-RUN git clone https://github.com/knaw-huc/resussun.git
+RUN mkdir -p /build/resussun
 WORKDIR /build/resussun
+
+COPY . /build/resussun
 RUN mvn clean package
 
 FROM openjdk:11-jre-slim

@@ -2,6 +2,8 @@ package nl.knaw.huc.resussun.timbuctoo;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -12,6 +14,7 @@ import java.net.http.HttpResponse;
 import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 
 public class Timbuctoo {
+  private static final Logger LOG = LoggerFactory.getLogger(Timbuctoo.class);
   private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -47,15 +50,16 @@ public class Timbuctoo {
       }
 
       return responseMapper.mapResponse(json);
-    } catch (InterruptedException | IOException e) {
+    } catch (IOException | InterruptedException e) {
       if (attempt > 10) {
         throw new TimbuctooException("Failed to execute a request to Timbuctoo", e);
       }
     } finally {
       try {
         attempt++;
-        Thread.sleep(1000L * attempt);
-      } catch (InterruptedException ignored) {
+        Thread.sleep(10000L * attempt);
+      } catch (InterruptedException e) {
+        LOG.debug("Interrupted!", e);
       }
     }
 
