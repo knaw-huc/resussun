@@ -17,7 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dropwizard.version>2.0.0</dropwizard.version>
-    <elasticsearch.version>7.5.1</elasticsearch.version>
+    <elasticsearch.version>7.13.3</elasticsearch.version>
     <lettuce.version>5.2.2.RELEASE</lettuce.version>
   </properties>
 
